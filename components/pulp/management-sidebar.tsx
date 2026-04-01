@@ -57,6 +57,7 @@ const navSections = [
     items: [
       { href: "/content/list", label: "Content", hint: "Packages and metadata", icon: "content" },
       { href: "/uploads/list", label: "Uploads", hint: "Chunked upload sessions", icon: "upload" },
+      { href: "/uploads/create", label: "Upload File", hint: "Send file to Pulp", icon: "upload" },
     ] satisfies NavItem[],
   },
 ];

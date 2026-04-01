@@ -1,5 +1,5 @@
 import { readApiDetail } from "./http";
-import { PulpPaginatedResponse, PulpUploadItem } from "./types";
+import { PulpPaginatedResponse, PulpUploadCreateResult, PulpUploadItem } from "./types";
 
 const UPLOADS_PATH = "/api/pulp/uploads";
 
@@ -11,5 +11,21 @@ export const pulpUploadService = {
     }
 
     return (await response.json()) as PulpPaginatedResponse<PulpUploadItem>;
+  },
+
+  async upload(file: File): Promise<PulpUploadCreateResult> {
+    const formData = new FormData();
+    formData.set("file", file);
+
+    const response = await fetch("/api/pulp/uploads", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(await readApiDetail(response));
+    }
+
+    return (await response.json()) as PulpUploadCreateResult;
   },
 };

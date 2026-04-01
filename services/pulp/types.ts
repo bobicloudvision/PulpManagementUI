@@ -45,6 +45,15 @@ export type PulpUploadItem = {
   size: number;
 };
 
+export type PulpUploadCreateResult = {
+  filename: string;
+  size: number;
+  sha256: string;
+  upload: string | null;
+  artifact?: string | null;
+  task: string | null;
+};
+
 export type PulpRpmPackage = {
   pulp_href: string;
   pulp_created: string;
