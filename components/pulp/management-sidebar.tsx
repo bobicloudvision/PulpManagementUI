@@ -29,6 +29,10 @@ const navSections = [
     title: "Distribution Management",
     items: [{ href: "/distributions/list", label: "Distributions List" }],
   },
+  {
+    title: "Content Management",
+    items: [{ href: "/content/list", label: "Content List" }],
+  },
 ];
 
 export function ManagementSidebar({
