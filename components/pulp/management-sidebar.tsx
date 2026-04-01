@@ -25,6 +25,10 @@ const navSections = [
       { href: "/groups/create", label: "Create Group" },
     ],
   },
+  {
+    title: "Distribution Management",
+    items: [{ href: "/distributions/list", label: "Distributions List" }],
+  },
 ];
 
 export function ManagementSidebar({

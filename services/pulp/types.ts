@@ -24,6 +24,23 @@ export type PulpGroup = {
   name: string;
 };
 
+export type PulpDistribution = {
+  pulp_href: string;
+  pulp_created: string;
+  base_path: string;
+  base_url: string;
+  name: string;
+  repository: string | null;
+};
+
+export type UpdatePulpDistributionPayload = {
+  name?: string;
+  base_path?: string;
+  repository?: string | null;
+  publication?: string | null;
+  content_guard?: string | null;
+};
+
 export type CreatePulpUserPayload = {
   username: string;
   password: string;
