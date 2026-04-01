@@ -16,9 +16,18 @@ import {
   PulpGroup,
   PulpUser,
   pulpClientService,
+  UpdatePulpGroupPayload,
+  UpdatePulpUserPayload,
 } from "@/services/pulp-client";
 
-export type { CreatePulpGroupPayload, CreatePulpUserPayload, PulpGroup, PulpUser };
+export type {
+  CreatePulpGroupPayload,
+  CreatePulpUserPayload,
+  PulpGroup,
+  PulpUser,
+  UpdatePulpGroupPayload,
+  UpdatePulpUserPayload,
+};
 
 type PulpManagementContextValue = {
   sessionUser: string | null;
@@ -33,6 +42,10 @@ type PulpManagementContextValue = {
   logout: () => Promise<void>;
   createUser: (payload: CreatePulpUserPayload) => Promise<boolean>;
   createGroup: (payload: CreatePulpGroupPayload) => Promise<boolean>;
+  updateUser: (id: number, payload: UpdatePulpUserPayload) => Promise<boolean>;
+  deleteUser: (id: number) => Promise<boolean>;
+  updateGroup: (id: number, payload: UpdatePulpGroupPayload) => Promise<boolean>;
+  deleteGroup: (id: number) => Promise<boolean>;
 };
 
 const PulpManagementContext = createContext<PulpManagementContextValue | null>(null);
@@ -171,6 +184,106 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
     [loadUsersAndGroups]
   );
 
+  const updateUser = useCallback(
+    async (id: number, payload: UpdatePulpUserPayload) => {
+      setError(null);
+      setIsLoading(true);
+
+      const result = await pulpClientService.updateUser(id, payload);
+      if (!result.ok) {
+        setError(result.detail);
+        setIsLoading(false);
+        return false;
+      }
+
+      try {
+        await loadUsersAndGroups();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Failed to reload users.");
+      } finally {
+        setIsLoading(false);
+      }
+
+      return true;
+    },
+    [loadUsersAndGroups]
+  );
+
+  const deleteUser = useCallback(
+    async (id: number) => {
+      setError(null);
+      setIsLoading(true);
+
+      const result = await pulpClientService.deleteUser(id);
+      if (!result.ok) {
+        setError(result.detail);
+        setIsLoading(false);
+        return false;
+      }
+
+      try {
+        await loadUsersAndGroups();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Failed to reload users.");
+      } finally {
+        setIsLoading(false);
+      }
+
+      return true;
+    },
+    [loadUsersAndGroups]
+  );
+
+  const updateGroup = useCallback(
+    async (id: number, payload: UpdatePulpGroupPayload) => {
+      setError(null);
+      setIsLoading(true);
+
+      const result = await pulpClientService.updateGroup(id, payload);
+      if (!result.ok) {
+        setError(result.detail);
+        setIsLoading(false);
+        return false;
+      }
+
+      try {
+        await loadUsersAndGroups();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Failed to reload groups.");
+      } finally {
+        setIsLoading(false);
+      }
+
+      return true;
+    },
+    [loadUsersAndGroups]
+  );
+
+  const deleteGroup = useCallback(
+    async (id: number) => {
+      setError(null);
+      setIsLoading(true);
+
+      const result = await pulpClientService.deleteGroup(id);
+      if (!result.ok) {
+        setError(result.detail);
+        setIsLoading(false);
+        return false;
+      }
+
+      try {
+        await loadUsersAndGroups();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Failed to reload groups.");
+      } finally {
+        setIsLoading(false);
+      }
+
+      return true;
+    },
+    [loadUsersAndGroups]
+  );
+
   const value = useMemo(
     () => ({
       sessionUser,
@@ -185,6 +298,10 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       logout,
       createUser,
       createGroup,
+      updateUser,
+      deleteUser,
+      updateGroup,
+      deleteGroup,
     }),
     [
       sessionUser,
@@ -198,6 +315,10 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       logout,
       createUser,
       createGroup,
+      updateUser,
+      deleteUser,
+      updateGroup,
+      deleteGroup,
     ]
   );
 

@@ -31,7 +31,20 @@ export type CreatePulpUserPayload = {
   is_active?: boolean;
 };
 
+export type UpdatePulpUserPayload = {
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  is_staff?: boolean;
+  is_active?: boolean;
+};
+
 export type CreatePulpGroupPayload = {
+  name: string;
+};
+
+export type UpdatePulpGroupPayload = {
   name: string;
 };
 
@@ -45,6 +58,8 @@ const API_PATHS = {
   logout: "/api/pulp/logout",
   users: "/api/pulp/users",
   groups: "/api/pulp/groups",
+  userById: (id: number) => `/api/pulp/users/${id}`,
+  groupById: (id: number) => `/api/pulp/groups/${id}`,
 } as const;
 
 export async function readApiDetail(response: Response): Promise<string> {
@@ -145,6 +160,76 @@ export const pulpClientService = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        detail: await readApiDetail(response),
+      };
+    }
+
+    return { ok: true };
+  },
+
+  async updateUser(
+    id: number,
+    payload: UpdatePulpUserPayload
+  ): Promise<{ ok: true } | { ok: false; detail: string }> {
+    const response = await fetch(API_PATHS.userById(id), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        detail: await readApiDetail(response),
+      };
+    }
+
+    return { ok: true };
+  },
+
+  async deleteUser(id: number): Promise<{ ok: true } | { ok: false; detail: string }> {
+    const response = await fetch(API_PATHS.userById(id), {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        detail: await readApiDetail(response),
+      };
+    }
+
+    return { ok: true };
+  },
+
+  async updateGroup(
+    id: number,
+    payload: UpdatePulpGroupPayload
+  ): Promise<{ ok: true } | { ok: false; detail: string }> {
+    const response = await fetch(API_PATHS.groupById(id), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        detail: await readApiDetail(response),
+      };
+    }
+
+    return { ok: true };
+  },
+
+  async deleteGroup(id: number): Promise<{ ok: true } | { ok: false; detail: string }> {
+    const response = await fetch(API_PATHS.groupById(id), {
+      method: "DELETE",
     });
 
     if (!response.ok) {
