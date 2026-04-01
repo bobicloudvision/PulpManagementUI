@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ManagementSidebar } from "@/components/pulp/management-sidebar";
+import { AdminShell } from "@/components/pulp/admin-shell";
 import { LoginCard } from "@/components/pulp/login-card";
 import {
   CreatePulpUserPayload,
@@ -62,106 +62,90 @@ export default function UsersCreatePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-6 md:p-10">
-      <div className="flex flex-col gap-6 md:flex-row">
-        <ManagementSidebar
-          hasSession={hasSession}
-          sessionUser={sessionUser}
-          isLoading={isLoading}
-          usersCount={users.length}
-          groupsCount={groups.length}
-          onLogout={logout}
-        />
+    <AdminShell
+      title="Create User"
+      description="Create new users directly in your connected Pulp server."
+      hasSession={hasSession}
+      sessionUser={sessionUser}
+      isLoading={isLoading}
+      usersCount={users.length}
+      groupsCount={groups.length}
+      error={error}
+      onLogout={logout}
+    >
+      {isCheckingSession ? (
+        <Card>Checking existing session...</Card>
+      ) : !hasSession ? (
+        <LoginCard isLoading={isLoading} onLogin={login} />
+      ) : (
+        <Card>
+          <CardTitle>New User</CardTitle>
+          <form className="grid gap-3 md:grid-cols-2" onSubmit={handleCreateUser}>
+            <FormField label="Username">
+              <Input
+                value={createUsername}
+                onChange={(event) => setCreateUsername(event.target.value)}
+                required
+              />
+            </FormField>
 
-        <section className="flex min-w-0 flex-1 flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Create User</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Create new users directly in your connected Pulp server.
-            </p>
-          </div>
+            <FormField label="Password">
+              <Input
+                type="password"
+                value={createPassword}
+                onChange={(event) => setCreatePassword(event.target.value)}
+                required
+              />
+            </FormField>
 
-          {isCheckingSession ? (
-            <Card>Checking existing session...</Card>
-          ) : !hasSession ? (
-            <LoginCard isLoading={isLoading} onLogin={login} />
-          ) : (
-            <Card>
-              <CardTitle>New User</CardTitle>
-              <form className="grid gap-3 md:grid-cols-2" onSubmit={handleCreateUser}>
-                <FormField label="Username">
-                  <Input
-                    value={createUsername}
-                    onChange={(event) => setCreateUsername(event.target.value)}
-                    required
-                  />
-                </FormField>
+            <FormField label="First name">
+              <Input
+                value={createFirstName}
+                onChange={(event) => setCreateFirstName(event.target.value)}
+              />
+            </FormField>
 
-                <FormField label="Password">
-                  <Input
-                    type="password"
-                    value={createPassword}
-                    onChange={(event) => setCreatePassword(event.target.value)}
-                    required
-                  />
-                </FormField>
+            <FormField label="Last name">
+              <Input
+                value={createLastName}
+                onChange={(event) => setCreateLastName(event.target.value)}
+              />
+            </FormField>
 
-                <FormField label="First name">
-                  <Input
-                    value={createFirstName}
-                    onChange={(event) => setCreateFirstName(event.target.value)}
-                  />
-                </FormField>
+            <FormField label="Email" className="md:col-span-2">
+              <Input
+                type="email"
+                value={createEmail}
+                onChange={(event) => setCreateEmail(event.target.value)}
+              />
+            </FormField>
 
-                <FormField label="Last name">
-                  <Input
-                    value={createLastName}
-                    onChange={(event) => setCreateLastName(event.target.value)}
-                  />
-                </FormField>
+            <CheckboxField label="Is staff">
+              <Input
+                type="checkbox"
+                className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
+                checked={createIsStaff}
+                onChange={(event) => setCreateIsStaff(event.target.checked)}
+              />
+            </CheckboxField>
 
-                <FormField label="Email" className="md:col-span-2">
-                  <Input
-                    type="email"
-                    value={createEmail}
-                    onChange={(event) => setCreateEmail(event.target.value)}
-                  />
-                </FormField>
+            <CheckboxField label="Is active">
+              <Input
+                type="checkbox"
+                className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
+                checked={createIsActive}
+                onChange={(event) => setCreateIsActive(event.target.checked)}
+              />
+            </CheckboxField>
 
-                <CheckboxField label="Is staff">
-                  <Input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
-                    checked={createIsStaff}
-                    onChange={(event) => setCreateIsStaff(event.target.checked)}
-                  />
-                </CheckboxField>
-
-                <CheckboxField label="Is active">
-                  <Input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
-                    checked={createIsActive}
-                    onChange={(event) => setCreateIsActive(event.target.checked)}
-                  />
-                </CheckboxField>
-
-                <div className="md:col-span-2">
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Creating..." : "Create user"}
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          )}
-
-          {error ? (
-            <section className="rounded-lg border border-red-400 bg-red-50 p-3 text-sm text-red-700 dark:border-red-600 dark:bg-red-950/40 dark:text-red-300">
-              {error}
-            </section>
-          ) : null}
-        </section>
-      </div>
-    </main>
+            <div className="md:col-span-2">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create user"}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+    </AdminShell>
   );
 }
