@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AdminShell } from "@/components/pulp/admin-shell";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
+import { useRequireAuth } from "@/components/pulp/use-require-auth";
 import { usePulpUsers } from "@/components/pulp/use-pulp-users";
-import { AdminShell } from "@/components/pulp/admin-shell";
-import { LoginCard } from "@/components/pulp/login-card";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -46,8 +46,9 @@ function normalizeUrl(raw: unknown): string | null {
 export default function PackageDetailsPage() {
   const params = useParams<{ id: string }>();
   const packageId = useMemo(() => params?.id ?? "", [params]);
-  const { sessionUser, isLoading, isCheckingSession, hasSession, error, setError, login, logout } =
+  const { sessionUser, isLoading, isCheckingSession, hasSession, error, setError, logout } =
     usePulpAuthContext();
+  const isRedirectingToLogin = useRequireAuth({ hasSession, isCheckingSession });
   const { users } = usePulpUsers(hasSession);
   const { groups } = usePulpGroups(hasSession);
   const [pkg, setPkg] = useState<PulpRpmPackage | null>(null);
@@ -92,10 +93,8 @@ export default function PackageDetailsPage() {
       error={error}
       onLogout={logout}
     >
-      {isCheckingSession ? (
+      {isCheckingSession || isRedirectingToLogin ? (
         <Card>Checking existing session...</Card>
-      ) : !hasSession ? (
-        <LoginCard isLoading={isLoading} onLogin={login} />
       ) : !pkg ? (
         <Card>Loading package details...</Card>
       ) : (

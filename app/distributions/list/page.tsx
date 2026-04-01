@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
-import { LoginCard } from "@/components/pulp/login-card";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpDistributions } from "@/components/pulp/use-pulp-distributions";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
+import { useRequireAuth } from "@/components/pulp/use-require-auth";
 import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -30,8 +30,9 @@ function resolveDistributionUrl(raw: string): string {
 }
 
 export default function DistributionsListPage() {
-  const { sessionUser, isLoading, isCheckingSession, hasSession, error, login, logout } =
+  const { sessionUser, isLoading, isCheckingSession, hasSession, error, logout } =
     usePulpAuthContext();
+  const isRedirectingToLogin = useRequireAuth({ hasSession, isCheckingSession });
   const { users } = usePulpUsers(hasSession);
   const { groups } = usePulpGroups(hasSession);
   const { distributions, updateDistribution, deleteDistribution } = usePulpDistributions(hasSession);
@@ -80,10 +81,8 @@ export default function DistributionsListPage() {
       error={error}
       onLogout={logout}
     >
-      {isCheckingSession ? (
+      {isCheckingSession || isRedirectingToLogin ? (
         <Card>Checking existing session...</Card>
-      ) : !hasSession ? (
-        <LoginCard isLoading={isLoading} onLogin={login} />
       ) : (
         <Card>
           <CardTitle>Distributions ({distributions.length})</CardTitle>

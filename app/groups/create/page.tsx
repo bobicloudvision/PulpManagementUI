@@ -2,9 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
-import { LoginCard } from "@/components/pulp/login-card";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
+import { useRequireAuth } from "@/components/pulp/use-require-auth";
 import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { CreatePulpGroupPayload } from "@/services/pulp/types";
 
 export default function GroupsCreatePage() {
-  const { sessionUser, isLoading, isCheckingSession, hasSession, error, login, logout } =
+  const { sessionUser, isLoading, isCheckingSession, hasSession, error, logout } =
     usePulpAuthContext();
+  const isRedirectingToLogin = useRequireAuth({ hasSession, isCheckingSession });
   const { groups, createGroup } = usePulpGroups(hasSession);
   const { users } = usePulpUsers(hasSession);
 
@@ -45,10 +46,8 @@ export default function GroupsCreatePage() {
       error={error}
       onLogout={logout}
     >
-      {isCheckingSession ? (
+      {isCheckingSession || isRedirectingToLogin ? (
         <Card>Checking existing session...</Card>
-      ) : !hasSession ? (
-        <LoginCard isLoading={isLoading} onLogin={login} />
       ) : (
         <Card>
           <CardTitle>New Group</CardTitle>
