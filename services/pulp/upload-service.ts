@@ -1,5 +1,10 @@
 import { readApiDetail } from "./http";
-import { PulpPaginatedResponse, PulpUploadCreateResult, PulpUploadItem } from "./types";
+import {
+  PulpPaginatedResponse,
+  PulpUploadAsRpmResult,
+  PulpUploadCreateResult,
+  PulpUploadItem,
+} from "./types";
 
 const UPLOADS_PATH = "/api/pulp/uploads";
 
@@ -27,5 +32,19 @@ export const pulpUploadService = {
     }
 
     return (await response.json()) as PulpUploadCreateResult;
+  },
+
+  async uploadAsRpm(artifact: string): Promise<PulpUploadAsRpmResult> {
+    const response = await fetch("/api/pulp/content/rpm/packages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artifact }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await readApiDetail(response));
+    }
+
+    return (await response.json()) as PulpUploadAsRpmResult;
   },
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
@@ -11,7 +12,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { pulpUploadService } from "@/services/pulp/upload-service";
-import { PulpUploadCreateResult } from "@/services/pulp/types";
+import { PulpUploadAsRpmResult, PulpUploadCreateResult } from "@/services/pulp/types";
 
 function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value < 0) return "-";
@@ -30,8 +31,15 @@ export default function UploadsCreatePage() {
   const { groups } = usePulpGroups(hasSession);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isCreatingRpm, setIsCreatingRpm] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [result, setResult] = useState<PulpUploadCreateResult | null>(null);
+  const [rpmResult, setRpmResult] = useState<PulpUploadAsRpmResult | null>(null);
+
+  function extractRpmPackageId(contentHref: string): string | null {
+    const match = contentHref.match(/\/content\/rpm\/packages\/([^/]+)\/?$/);
+    return match?.[1] ?? null;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,6 +51,7 @@ export default function UploadsCreatePage() {
     setError(null);
     setIsUploading(true);
     setResult(null);
+    setRpmResult(null);
 
     try {
       const uploaded = await pulpUploadService.upload(selectedFile);
@@ -52,6 +61,26 @@ export default function UploadsCreatePage() {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleUploadAsRpm() {
+    if (!result?.artifact) {
+      setError("No artifact available for RPM creation.");
+      return;
+    }
+
+    setError(null);
+    setIsCreatingRpm(true);
+    setRpmResult(null);
+
+    try {
+      const created = await pulpUploadService.uploadAsRpm(result.artifact);
+      setRpmResult(created);
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Failed to create RPM content.");
+    } finally {
+      setIsCreatingRpm(false);
     }
   }
 
@@ -118,6 +147,34 @@ export default function UploadsCreatePage() {
                 <p className="break-all">
                   <span className="font-medium">Task:</span> {result.task ?? "-"}
                 </p>
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleUploadAsRpm}
+                    disabled={!result.artifact || isCreatingRpm}
+                  >
+                    {isCreatingRpm ? "Uploading as RPM..." : "Upload as RPM"}
+                  </Button>
+                </div>
+                {rpmResult ? (
+                  <div className="space-y-2 rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
+                    <p className="break-all">
+                      <span className="font-medium">RPM Content:</span> {rpmResult.content ?? "-"}
+                    </p>
+                    <p className="break-all">
+                      <span className="font-medium">Task:</span> {rpmResult.task ?? "-"}
+                    </p>
+                    {rpmResult.content && extractRpmPackageId(rpmResult.content) ? (
+                      <Link
+                        href={`/content/packages/${extractRpmPackageId(rpmResult.content)}`}
+                        className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                      >
+                        Open package details
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           ) : null}
