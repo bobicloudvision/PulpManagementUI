@@ -4,6 +4,15 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { LoginCard } from "@/components/pulp/login-card";
 import { usePulpManagement } from "@/components/pulp/use-pulp-management";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TableWrapper,
+} from "@/components/ui/table";
 
 export default function UsersListPage() {
   const {
@@ -21,7 +30,7 @@ export default function UsersListPage() {
   return (
     <AdminShell
       title="Users List"
-      description="View users and groups from your connected Pulp server."
+      description="View users from your connected Pulp server."
       hasSession={hasSession}
       sessionUser={sessionUser}
       isLoading={isLoading}
@@ -35,37 +44,33 @@ export default function UsersListPage() {
       ) : !hasSession ? (
         <LoginCard isLoading={isLoading} onLogin={login} />
       ) : (
-        <section className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardTitle>Users ({users.length})</CardTitle>
-            <CardContent className="space-y-2">
-              {users.map((user) => (
-                <Card key={user.id} className="p-3 text-sm">
-                  <div className="font-medium">{user.username}</div>
-                  <div className="text-zinc-600 dark:text-zinc-400">
-                    {user.first_name} {user.last_name}
-                  </div>
-                  <div className="text-zinc-600 dark:text-zinc-400">{user.email || "-"}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-500">
-                    Staff: {String(user.is_staff)} | Active: {String(user.is_active)}
-                  </div>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardTitle>Groups ({groups.length})</CardTitle>
-            <CardContent className="space-y-2">
-              {groups.map((group) => (
-                <Card key={group.id} className="p-3 text-sm">
-                  <div className="font-medium">{group.name}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-500">ID: {group.id}</div>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
-        </section>
+        <Card>
+          <CardTitle>Users ({users.length})</CardTitle>
+          <CardContent>
+            <TableWrapper>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Username</TableHeaderCell>
+                    <TableHeaderCell>Email</TableHeaderCell>
+                    <TableHeaderCell>Staff</TableHeaderCell>
+                    <TableHeaderCell>Active</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.username}</TableCell>
+                      <TableCell>{user.email || "-"}</TableCell>
+                      <TableCell>{String(user.is_staff)}</TableCell>
+                      <TableCell>{String(user.is_active)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableWrapper>
+          </CardContent>
+        </Card>
       )}
     </AdminShell>
   );
