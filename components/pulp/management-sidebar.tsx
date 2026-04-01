@@ -31,8 +31,8 @@ export function ManagementSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="md:sticky md:top-6 md:h-[calc(100vh-3rem)] md:w-72 md:shrink-0">
-      <Card className="flex h-full flex-col gap-6 bg-zinc-50/70 p-5 dark:bg-zinc-900/40">
+    <aside className="w-full border-b border-zinc-200 bg-white/90 md:h-screen md:w-80 md:shrink-0 md:border-r md:border-b-0 dark:border-zinc-800 dark:bg-zinc-900/60">
+      <div className="flex h-full flex-col gap-6 p-5 md:sticky md:top-0">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Pulp Management
@@ -102,7 +102,7 @@ export function ManagementSidebar({
             <p className="text-lg font-semibold">{groupsCount}</p>
           </Card>
         </div>
-      </Card>
+      </div>
     </aside>
   );
 }

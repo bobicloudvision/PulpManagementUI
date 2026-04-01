@@ -30,8 +30,8 @@ export function AdminShell({
   children,
 }: AdminShellProps) {
   return (
-    <main className="mx-auto w-full max-w-7xl p-6 md:p-10">
-      <div className="flex flex-col gap-6 md:flex-row">
+    <main className="min-h-screen w-full bg-zinc-100/70 dark:bg-zinc-950">
+      <div className="flex min-h-screen flex-col md:flex-row">
         <ManagementSidebar
           hasSession={hasSession}
           sessionUser={sessionUser}
@@ -41,8 +41,8 @@ export function AdminShell({
           onLogout={onLogout}
         />
 
-        <section className="flex min-w-0 flex-1 flex-col gap-6">
-          <Card className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <section className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-8">
+          <Card className="flex flex-col gap-4 border-zinc-200 bg-white/90 md:flex-row md:items-end md:justify-between dark:border-zinc-800 dark:bg-zinc-900/70">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Administration
