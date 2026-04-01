@@ -1,52 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CreatePulpUserPayload,
+  PulpGroup,
+  PulpUser,
+  pulpClientService,
+} from "@/services/pulp-client";
 
-type ApiErrorResponse = {
-  detail?: string;
-};
-
-export type PulpUser = {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  is_staff: boolean;
-  is_active: boolean;
-};
-
-export type PulpGroup = {
-  id: number;
-  name: string;
-};
-
-type PulpListResponse<T> = {
-  results: T[];
-};
-
-export type CreatePulpUserPayload = {
-  username: string;
-  password: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  is_staff?: boolean;
-  is_active?: boolean;
-};
-
-async function readDetail(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as ApiErrorResponse;
-    if (body.detail) {
-      return body.detail;
-    }
-  } catch {
-    // Ignore parsing failure and fallback to status text.
-  }
-
-  return response.statusText || "Unexpected server error.";
-}
+export type { CreatePulpUserPayload, PulpGroup, PulpUser };
 
 export function usePulpManagement() {
   const [sessionUser, setSessionUser] = useState<string | null>(null);
@@ -57,38 +19,22 @@ export function usePulpManagement() {
   const [error, setError] = useState<string | null>(null);
 
   const loadUsersAndGroups = useCallback(async () => {
-    const [usersResponse, groupsResponse] = await Promise.all([
-      fetch("/api/pulp/users"),
-      fetch("/api/pulp/groups"),
-    ]);
-
-    if (!usersResponse.ok) {
-      throw new Error(await readDetail(usersResponse));
-    }
-
-    if (!groupsResponse.ok) {
-      throw new Error(await readDetail(groupsResponse));
-    }
-
-    const usersPayload = (await usersResponse.json()) as PulpListResponse<PulpUser>;
-    const groupsPayload = (await groupsResponse.json()) as PulpListResponse<PulpGroup>;
-
-    setUsers(usersPayload.results);
-    setGroups(groupsPayload.results);
+    const data = await pulpClientService.getUsersAndGroups();
+    setUsers(data.users);
+    setGroups(data.groups);
   }, []);
 
   const checkSession = useCallback(async () => {
     setIsCheckingSession(true);
 
-    const response = await fetch("/api/pulp/login");
-    if (!response.ok) {
+    const authenticatedUser = await pulpClientService.getSessionUser();
+    if (!authenticatedUser) {
       setSessionUser(null);
       setIsCheckingSession(false);
       return;
     }
 
-    const payload = (await response.json()) as { username: string };
-    setSessionUser(payload.username);
+    setSessionUser(authenticatedUser);
 
     try {
       await loadUsersAndGroups();
@@ -114,20 +60,14 @@ export function usePulpManagement() {
       setError(null);
       setIsLoading(true);
 
-      const response = await fetch("/api/pulp/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        setError(await readDetail(response));
+      const result = await pulpClientService.login(username, password);
+      if (!result.ok) {
+        setError(result.detail);
         setIsLoading(false);
         return false;
       }
 
-      const payload = (await response.json()) as { username: string };
-      setSessionUser(payload.username);
+      setSessionUser(result.username);
 
       try {
         await loadUsersAndGroups();
@@ -146,7 +86,7 @@ export function usePulpManagement() {
     setIsLoading(true);
     setError(null);
 
-    await fetch("/api/pulp/logout", { method: "POST" });
+    await pulpClientService.logout();
 
     setSessionUser(null);
     setUsers([]);
@@ -159,14 +99,9 @@ export function usePulpManagement() {
       setError(null);
       setIsLoading(true);
 
-      const response = await fetch("/api/pulp/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        setError(await readDetail(response));
+      const result = await pulpClientService.createUser(payload);
+      if (!result.ok) {
+        setError(result.detail);
         setIsLoading(false);
         return false;
       }
