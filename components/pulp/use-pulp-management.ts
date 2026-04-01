@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createElement,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   CreatePulpUserPayload,
   PulpGroup,
@@ -10,7 +19,23 @@ import {
 
 export type { CreatePulpUserPayload, PulpGroup, PulpUser };
 
-export function usePulpManagement() {
+type PulpManagementContextValue = {
+  sessionUser: string | null;
+  users: PulpUser[];
+  groups: PulpGroup[];
+  isLoading: boolean;
+  isCheckingSession: boolean;
+  hasSession: boolean;
+  error: string | null;
+  setError: (value: string | null) => void;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  createUser: (payload: CreatePulpUserPayload) => Promise<boolean>;
+};
+
+const PulpManagementContext = createContext<PulpManagementContextValue | null>(null);
+
+export function PulpManagementProvider({ children }: { children: ReactNode }) {
   const [sessionUser, setSessionUser] = useState<string | null>(null);
   const [users, setUsers] = useState<PulpUser[]>([]);
   const [groups, setGroups] = useState<PulpGroup[]>([]);
@@ -119,17 +144,42 @@ export function usePulpManagement() {
     [loadUsersAndGroups]
   );
 
-  return {
-    sessionUser,
-    users,
-    groups,
-    isLoading,
-    isCheckingSession,
-    hasSession,
-    error,
-    setError,
-    login,
-    logout,
-    createUser,
-  };
+  const value = useMemo(
+    () => ({
+      sessionUser,
+      users,
+      groups,
+      isLoading,
+      isCheckingSession,
+      hasSession,
+      error,
+      setError,
+      login,
+      logout,
+      createUser,
+    }),
+    [
+      sessionUser,
+      users,
+      groups,
+      isLoading,
+      isCheckingSession,
+      hasSession,
+      error,
+      login,
+      logout,
+      createUser,
+    ]
+  );
+
+  return createElement(PulpManagementContext.Provider, { value }, children);
+}
+
+export function usePulpManagement() {
+  const context = useContext(PulpManagementContext);
+  if (!context) {
+    throw new Error("usePulpManagement must be used within PulpManagementProvider.");
+  }
+
+  return context;
 }
