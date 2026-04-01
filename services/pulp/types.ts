@@ -33,6 +33,19 @@ export type PulpDistribution = {
   repository: string | null;
 };
 
+export type PulpContentItem = {
+  pulp_href: string;
+  pulp_created: string;
+  artifacts: Record<string, string>;
+};
+
+export type PulpPaginatedResponse<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+};
+
 export type UpdatePulpDistributionPayload = {
   name?: string;
   base_path?: string;
