@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 
@@ -126,8 +127,15 @@ export function ManagementSidebar({
       <div className="flex h-full flex-col gap-5 p-4 md:sticky md:top-0 md:overflow-y-auto">
         <header className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-100 p-4 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
           <div className="mb-3 flex items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white dark:bg-white dark:text-black">
-              PM
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+              <Image
+                src="/pulp_logo_icon.svg"
+                alt="Pulp logo"
+                width={22}
+                height={22}
+                className="h-[22px] w-[22px]"
+                priority
+              />
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
