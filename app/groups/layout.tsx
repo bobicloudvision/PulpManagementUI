@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
-import { PulpManagementProvider } from "@/components/pulp/use-pulp-management";
+import { PulpAuthProvider } from "@/components/pulp/auth-context";
 
 export default function GroupsLayout({ children }: { children: ReactNode }) {
-  return <PulpManagementProvider>{children}</PulpManagementProvider>;
+  return <PulpAuthProvider>{children}</PulpAuthProvider>;
 }

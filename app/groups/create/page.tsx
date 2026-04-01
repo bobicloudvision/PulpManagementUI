@@ -3,25 +3,20 @@
 import { FormEvent, useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { LoginCard } from "@/components/pulp/login-card";
-import { CreatePulpGroupPayload, usePulpManagement } from "@/components/pulp/use-pulp-management";
+import { usePulpAuthContext } from "@/components/pulp/auth-context";
+import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
+import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { CreatePulpGroupPayload } from "@/services/pulp/types";
 
 export default function GroupsCreatePage() {
-  const {
-    sessionUser,
-    users,
-    groups,
-    isLoading,
-    isCheckingSession,
-    hasSession,
-    error,
-    login,
-    logout,
-    createGroup,
-  } = usePulpManagement();
+  const { sessionUser, isLoading, isCheckingSession, hasSession, error, login, logout } =
+    usePulpAuthContext();
+  const { groups, createGroup } = usePulpGroups(hasSession);
+  const { users } = usePulpUsers(hasSession);
 
   const [groupName, setGroupName] = useState("");
 

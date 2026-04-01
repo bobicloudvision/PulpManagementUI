@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { LoginCard } from "@/components/pulp/login-card";
-import { usePulpManagement } from "@/components/pulp/use-pulp-management";
+import { usePulpAuthContext } from "@/components/pulp/auth-context";
+import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
+import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,19 +20,10 @@ import {
 } from "@/components/ui/table";
 
 export default function UsersListPage() {
-  const {
-    sessionUser,
-    users,
-    groups,
-    isLoading,
-    isCheckingSession,
-    hasSession,
-    error,
-    login,
-    logout,
-    updateUser,
-    deleteUser,
-  } = usePulpManagement();
+  const { sessionUser, isLoading, isCheckingSession, hasSession, error, login, logout } =
+    usePulpAuthContext();
+  const { users, updateUser, deleteUser } = usePulpUsers(hasSession);
+  const { groups } = usePulpGroups(hasSession);
 
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editUsername, setEditUsername] = useState("");

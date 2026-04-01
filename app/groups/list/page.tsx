@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { LoginCard } from "@/components/pulp/login-card";
-import { usePulpManagement } from "@/components/pulp/use-pulp-management";
+import { usePulpAuthContext } from "@/components/pulp/auth-context";
+import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
+import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,19 +20,10 @@ import {
 } from "@/components/ui/table";
 
 export default function GroupsListPage() {
-  const {
-    sessionUser,
-    users,
-    groups,
-    isLoading,
-    isCheckingSession,
-    hasSession,
-    error,
-    login,
-    logout,
-    updateGroup,
-    deleteGroup,
-  } = usePulpManagement();
+  const { sessionUser, isLoading, isCheckingSession, hasSession, error, login, logout } =
+    usePulpAuthContext();
+  const { groups, updateGroup, deleteGroup } = usePulpGroups(hasSession);
+  const { users } = usePulpUsers(hasSession);
 
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const [editGroupName, setEditGroupName] = useState("");
