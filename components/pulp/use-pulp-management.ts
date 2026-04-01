@@ -10,15 +10,17 @@ import {
   useMemo,
   useState,
 } from "react";
+import { pulpAuthService } from "@/services/pulp/auth-service";
+import { pulpGroupService } from "@/services/pulp/group-service";
+import { pulpUserService } from "@/services/pulp/user-service";
 import {
   CreatePulpGroupPayload,
   CreatePulpUserPayload,
   PulpGroup,
   PulpUser,
-  pulpClientService,
   UpdatePulpGroupPayload,
   UpdatePulpUserPayload,
-} from "@/services/pulp-client";
+} from "@/services/pulp/types";
 
 export type {
   CreatePulpGroupPayload,
@@ -59,15 +61,18 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const loadUsersAndGroups = useCallback(async () => {
-    const data = await pulpClientService.getUsersAndGroups();
-    setUsers(data.users);
-    setGroups(data.groups);
+    const [nextUsers, nextGroups] = await Promise.all([
+      pulpUserService.list(),
+      pulpGroupService.list(),
+    ]);
+    setUsers(nextUsers);
+    setGroups(nextGroups);
   }, []);
 
   const checkSession = useCallback(async () => {
     setIsCheckingSession(true);
 
-    const authenticatedUser = await pulpClientService.getSessionUser();
+    const authenticatedUser = await pulpAuthService.getSessionUser();
     if (!authenticatedUser) {
       setSessionUser(null);
       setIsCheckingSession(false);
@@ -100,7 +105,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.login(username, password);
+      const result = await pulpAuthService.login(username, password);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
@@ -126,7 +131,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
 
-    await pulpClientService.logout();
+    await pulpAuthService.logout();
 
     setSessionUser(null);
     setUsers([]);
@@ -139,7 +144,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.createUser(payload);
+      const result = await pulpUserService.create(payload);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
@@ -164,7 +169,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.createGroup(payload);
+      const result = await pulpGroupService.create(payload);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
@@ -189,7 +194,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.updateUser(id, payload);
+      const result = await pulpUserService.update(id, payload);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
@@ -214,7 +219,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.deleteUser(id);
+      const result = await pulpUserService.remove(id);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
@@ -239,7 +244,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.updateGroup(id, payload);
+      const result = await pulpGroupService.update(id, payload);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
@@ -264,7 +269,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
 
-      const result = await pulpClientService.deleteGroup(id);
+      const result = await pulpGroupService.remove(id);
       if (!result.ok) {
         setError(result.detail);
         setIsLoading(false);
