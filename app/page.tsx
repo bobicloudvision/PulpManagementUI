@@ -1,6 +1,10 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { CheckboxField, FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 
 type PulpUser = {
   id: number;
@@ -46,8 +50,16 @@ export default function Home() {
   const [users, setUsers] = useState<PulpUser[]>([]);
   const [groups, setGroups] = useState<PulpGroup[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [createUsername, setCreateUsername] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createFirstName, setCreateFirstName] = useState("");
+  const [createLastName, setCreateLastName] = useState("");
+  const [createEmail, setCreateEmail] = useState("");
+  const [createIsStaff, setCreateIsStaff] = useState(false);
+  const [createIsActive, setCreateIsActive] = useState(true);
 
   const loadUsersAndGroups = useCallback(async () => {
     const [usersResponse, groupsResponse] = await Promise.all([
@@ -145,6 +157,48 @@ export default function Home() {
     setIsLoading(false);
   }
 
+  async function handleCreateUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsCreatingUser(true);
+
+    const response = await fetch("/api/pulp/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: createUsername,
+        password: createPassword,
+        first_name: createFirstName,
+        last_name: createLastName,
+        email: createEmail,
+        is_staff: createIsStaff,
+        is_active: createIsActive,
+      }),
+    });
+
+    if (!response.ok) {
+      setError(await readDetail(response));
+      setIsCreatingUser(false);
+      return;
+    }
+
+    setCreateUsername("");
+    setCreatePassword("");
+    setCreateFirstName("");
+    setCreateLastName("");
+    setCreateEmail("");
+    setCreateIsStaff(false);
+    setCreateIsActive(true);
+
+    try {
+      await loadUsersAndGroups();
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to reload users.");
+    } finally {
+      setIsCreatingUser(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 md:p-10">
       <h1 className="text-2xl font-semibold">Pulp Server Management</h1>
@@ -153,69 +207,131 @@ export default function Home() {
       </p>
 
       {isCheckingSession ? (
-        <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <Card>
           Checking existing session...
-        </section>
+        </Card>
       ) : !hasSession ? (
-        <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <Card>
           <form className="flex flex-col gap-4" onSubmit={handleLogin}>
-            <label className="flex flex-col gap-2 text-sm">
-              Username
-              <input
-                className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700"
+            <FormField label="Username">
+              <Input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
                 required
               />
-            </label>
+            </FormField>
 
-            <label className="flex flex-col gap-2 text-sm">
-              Password
-              <input
+            <FormField label="Password">
+              <Input
                 type="password"
-                className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
                 required
               />
-            </label>
+            </FormField>
 
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-fit rounded-md bg-black px-4 py-2 text-white disabled:opacity-50 dark:bg-white dark:text-black"
             >
               {isLoading ? "Logging in..." : "Login"}
-            </button>
+            </Button>
           </form>
-        </section>
+        </Card>
       ) : (
         <>
-          <section className="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+          <Card className="flex items-center justify-between">
             <span className="text-sm">
               Logged in as <strong>{sessionUser}</strong>
             </span>
-            <button
-              type="button"
+            <Button
               onClick={handleLogout}
               disabled={isLoading}
-              className="rounded-md border border-zinc-300 px-4 py-2 text-sm disabled:opacity-50 dark:border-zinc-700"
+              variant="outline"
             >
               Logout
-            </button>
-          </section>
+            </Button>
+          </Card>
+
+          <Card>
+            <CardTitle>Create User</CardTitle>
+            <form className="grid gap-3 md:grid-cols-2" onSubmit={handleCreateUser}>
+              <FormField label="Username">
+                <Input
+                  value={createUsername}
+                  onChange={(event) => setCreateUsername(event.target.value)}
+                  required
+                />
+              </FormField>
+
+              <FormField label="Password">
+                <Input
+                  type="password"
+                  value={createPassword}
+                  onChange={(event) => setCreatePassword(event.target.value)}
+                  required
+                />
+              </FormField>
+
+              <FormField label="First name">
+                <Input
+                  value={createFirstName}
+                  onChange={(event) => setCreateFirstName(event.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Last name">
+                <Input
+                  value={createLastName}
+                  onChange={(event) => setCreateLastName(event.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Email" className="md:col-span-2">
+                <Input
+                  type="email"
+                  value={createEmail}
+                  onChange={(event) => setCreateEmail(event.target.value)}
+                />
+              </FormField>
+
+              <CheckboxField label="Is staff">
+                <Input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
+                  checked={createIsStaff}
+                  onChange={(event) => setCreateIsStaff(event.target.checked)}
+                />
+              </CheckboxField>
+
+              <CheckboxField label="Is active">
+                <Input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
+                  checked={createIsActive}
+                  onChange={(event) => setCreateIsActive(event.target.checked)}
+                />
+              </CheckboxField>
+
+              <div className="md:col-span-2">
+                <Button
+                  type="submit"
+                  disabled={isCreatingUser}
+                >
+                  {isCreatingUser ? "Creating..." : "Create user"}
+                </Button>
+              </div>
+            </form>
+          </Card>
 
           <section className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-              <h2 className="mb-3 text-lg font-medium">Users ({users.length})</h2>
-              <div className="space-y-2">
+            <Card>
+              <CardTitle>Users ({users.length})</CardTitle>
+              <CardContent className="space-y-2">
                 {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-800"
-                  >
+                  <Card key={user.id} className="p-3 text-sm">
                     <div className="font-medium">{user.username}</div>
                     <div className="text-zinc-600 dark:text-zinc-400">
                       {user.first_name} {user.last_name}
@@ -224,25 +340,22 @@ export default function Home() {
                     <div className="text-xs text-zinc-500 dark:text-zinc-500">
                       Staff: {String(user.is_staff)} | Active: {String(user.is_active)}
                     </div>
-                  </div>
+                  </Card>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-              <h2 className="mb-3 text-lg font-medium">Groups ({groups.length})</h2>
-              <div className="space-y-2">
+            <Card>
+              <CardTitle>Groups ({groups.length})</CardTitle>
+              <CardContent className="space-y-2">
                 {groups.map((group) => (
-                  <div
-                    key={group.id}
-                    className="rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-800"
-                  >
+                  <Card key={group.id} className="p-3 text-sm">
                     <div className="font-medium">{group.name}</div>
                     <div className="text-xs text-zinc-500 dark:text-zinc-500">ID: {group.id}</div>
-                  </div>
+                  </Card>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </section>
         </>
       )}
