@@ -1,5 +1,5 @@
 import { readApiDetail } from "./http";
-import { PulpContentItem, PulpPaginatedResponse } from "./types";
+import { PulpContentItem, PulpPaginatedResponse, PulpRpmPackage } from "./types";
 
 const CONTENT_PATH = "/api/pulp/content";
 
@@ -11,5 +11,14 @@ export const pulpContentService = {
     }
 
     return (await response.json()) as PulpPaginatedResponse<PulpContentItem>;
+  },
+
+  async getRpmPackage(id: string): Promise<PulpRpmPackage> {
+    const response = await fetch(`/api/pulp/content/rpm/packages/${id}`);
+    if (!response.ok) {
+      throw new Error(await readApiDetail(response));
+    }
+
+    return (await response.json()) as PulpRpmPackage;
   },
 };

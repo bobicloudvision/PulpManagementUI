@@ -92,13 +92,18 @@ export async function pulpFetch<TData>(
 
   const json = (await response.json()) as TData | PulpErrorResponse;
   if (!response.ok) {
+    const hasDetail =
+      typeof json === "object" &&
+      json !== null &&
+      "detail" in json &&
+      typeof (json as PulpErrorResponse).detail === "string";
+
     return {
       ok: false,
       status: response.status,
-      detail:
-        "detail" in json && typeof json.detail === "string"
-          ? json.detail
-          : `Pulp request failed with status ${response.status}.`,
+      detail: hasDetail
+        ? (json as PulpErrorResponse).detail ?? `Pulp request failed with status ${response.status}.`
+        : `Pulp request failed with status ${response.status}.`,
     };
   }
 

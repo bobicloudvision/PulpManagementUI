@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { LoginCard } from "@/components/pulp/login-card";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
@@ -34,6 +35,11 @@ export default function ContentListPage() {
     goPrevious,
   } = usePulpContent(hasSession, 50);
 
+  function extractRpmPackageId(pulpHref: string): string | null {
+    const match = pulpHref.match(/\/content\/rpm\/packages\/([^/]+)\/?$/);
+    return match?.[1] ?? null;
+  }
+
   return (
     <AdminShell
       title="Content List"
@@ -63,18 +69,34 @@ export default function ContentListPage() {
                     <TableHeaderCell>Pulp Href</TableHeaderCell>
                     <TableHeaderCell>Created</TableHeaderCell>
                     <TableHeaderCell>Artifact Names</TableHeaderCell>
+                    <TableHeaderCell className="text-right">Actions</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {contentItems.map((item) => (
-                    <TableRow key={item.pulp_href}>
-                      <TableCell className="font-mono text-xs">{item.pulp_href}</TableCell>
-                      <TableCell>{item.pulp_created}</TableCell>
-                      <TableCell className="text-xs">
-                        {Object.keys(item.artifacts).join(", ") || "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {contentItems.map((item) => {
+                    const rpmPackageId = extractRpmPackageId(item.pulp_href);
+                    return (
+                      <TableRow key={item.pulp_href}>
+                        <TableCell className="font-mono text-xs">{item.pulp_href}</TableCell>
+                        <TableCell>{item.pulp_created}</TableCell>
+                        <TableCell className="text-xs">
+                          {Object.keys(item.artifacts).join(", ") || "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {rpmPackageId ? (
+                            <Link
+                              href={`/content/packages/${rpmPackageId}`}
+                              className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                            >
+                              View package
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-zinc-500">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableWrapper>
