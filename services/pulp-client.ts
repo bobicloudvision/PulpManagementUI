@@ -31,6 +31,10 @@ export type CreatePulpUserPayload = {
   is_active?: boolean;
 };
 
+export type CreatePulpGroupPayload = {
+  name: string;
+};
+
 export type PulpUsersAndGroups = {
   users: PulpUser[];
   groups: PulpGroup[];
@@ -119,6 +123,25 @@ export const pulpClientService = {
     payload: CreatePulpUserPayload
   ): Promise<{ ok: true } | { ok: false; detail: string }> {
     const response = await fetch(API_PATHS.users, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        detail: await readApiDetail(response),
+      };
+    }
+
+    return { ok: true };
+  },
+
+  async createGroup(
+    payload: CreatePulpGroupPayload
+  ): Promise<{ ok: true } | { ok: false; detail: string }> {
+    const response = await fetch(API_PATHS.groups, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

@@ -11,13 +11,14 @@ import {
   useState,
 } from "react";
 import {
+  CreatePulpGroupPayload,
   CreatePulpUserPayload,
   PulpGroup,
   PulpUser,
   pulpClientService,
 } from "@/services/pulp-client";
 
-export type { CreatePulpUserPayload, PulpGroup, PulpUser };
+export type { CreatePulpGroupPayload, CreatePulpUserPayload, PulpGroup, PulpUser };
 
 type PulpManagementContextValue = {
   sessionUser: string | null;
@@ -31,6 +32,7 @@ type PulpManagementContextValue = {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   createUser: (payload: CreatePulpUserPayload) => Promise<boolean>;
+  createGroup: (payload: CreatePulpGroupPayload) => Promise<boolean>;
 };
 
 const PulpManagementContext = createContext<PulpManagementContextValue | null>(null);
@@ -144,6 +146,31 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
     [loadUsersAndGroups]
   );
 
+  const createGroup = useCallback(
+    async (payload: CreatePulpGroupPayload) => {
+      setError(null);
+      setIsLoading(true);
+
+      const result = await pulpClientService.createGroup(payload);
+      if (!result.ok) {
+        setError(result.detail);
+        setIsLoading(false);
+        return false;
+      }
+
+      try {
+        await loadUsersAndGroups();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Failed to reload groups.");
+      } finally {
+        setIsLoading(false);
+      }
+
+      return true;
+    },
+    [loadUsersAndGroups]
+  );
+
   const value = useMemo(
     () => ({
       sessionUser,
@@ -157,6 +184,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       createUser,
+      createGroup,
     }),
     [
       sessionUser,
@@ -169,6 +197,7 @@ export function PulpManagementProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       createUser,
+      createGroup,
     ]
   );
 
