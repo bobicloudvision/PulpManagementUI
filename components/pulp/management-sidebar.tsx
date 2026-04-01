@@ -11,7 +11,14 @@ type ManagementSidebarProps = {
   groupsCount: number;
 };
 
-type NavIconName = "users" | "user-plus" | "groups" | "group-plus" | "distribution" | "content";
+type NavIconName =
+  | "users"
+  | "user-plus"
+  | "groups"
+  | "group-plus"
+  | "distribution"
+  | "content"
+  | "upload";
 type NavItem = {
   href: string;
   label: string;
@@ -49,6 +56,7 @@ const navSections = [
     title: "Repository",
     items: [
       { href: "/content/list", label: "Content", hint: "Packages and metadata", icon: "content" },
+      { href: "/uploads/list", label: "Uploads", hint: "Chunked upload sessions", icon: "upload" },
     ] satisfies NavItem[],
   },
 ];
@@ -109,6 +117,14 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <path d="M8 9.5h8" />
           <path d="M8 13h8" />
           <path d="M8 16.5h5" />
+        </svg>
+      );
+    case "upload":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClassName}>
+          <path d="M12 15V5" />
+          <path d="m8.5 8.5 3.5-3.5 3.5 3.5" />
+          <rect x="4" y="15" width="16" height="5" rx="1.5" />
         </svg>
       );
     default:

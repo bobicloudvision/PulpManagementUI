@@ -39,6 +39,12 @@ export type PulpContentItem = {
   artifacts: Record<string, string>;
 };
 
+export type PulpUploadItem = {
+  pulp_href: string;
+  pulp_created: string;
+  size: number;
+};
+
 export type PulpRpmPackage = {
   pulp_href: string;
   pulp_created: string;
