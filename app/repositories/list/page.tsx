@@ -43,7 +43,14 @@ import {
   pulpRepositoryManagementService,
   type RepositoryCreateResult,
 } from "@/services/pulp/repository-management-service";
-import { PulpDistribution, PulpRpmRepository } from "@/services/pulp/types";
+import {
+  PulpDistribution,
+  PulpRpmRepository,
+  type RpmRepositoryCreatePayload,
+} from "@/services/pulp/types";
+
+const rpmCreateTextareaClass =
+  "min-h-[4rem] w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700";
 
 function distributionUrlByRepositoryHref(distributions: PulpDistribution[]): Record<string, string> {
   const sorted = [...distributions].sort((a, b) => a.name.localeCompare(b.name));
@@ -107,8 +114,17 @@ export default function RepositoriesListPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createKind, setCreateKind] = useState<RepoKind>("rpm");
   const [createName, setCreateName] = useState("");
+  const [createDescription, setCreateDescription] = useState("");
+  const [createRemote, setCreateRemote] = useState("");
+  const [createAutopublish, setCreateAutopublish] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createResult, setCreateResult] = useState<RepositoryCreateResult | null>(null);
+
+  function resetRpmCreateFields() {
+    setCreateDescription("");
+    setCreateRemote("");
+    setCreateAutopublish(false);
+  }
 
   const load = useCallback(async () => {
     if (!hasSession) return;
@@ -154,6 +170,7 @@ export default function RepositoriesListPage() {
   function openCreateModal() {
     setCreateKind(kind);
     setCreateName("");
+    resetRpmCreateFields();
     setCreateResult(null);
     setError(null);
     setCreateModalOpen(true);
@@ -194,12 +211,32 @@ export default function RepositoriesListPage() {
     setIsCreating(true);
     setCreateResult(null);
     try {
-      const result =
-        createKind === "rpm"
-          ? await pulpRepositoryManagementService.createRpm(trimmed)
-          : await pulpRepositoryManagementService.createDeb(trimmed);
-      setCreateResult(result);
-      setCreateName("");
+      if (createKind === "rpm") {
+        const payload: RpmRepositoryCreatePayload = {
+          pulp_labels: {},
+          name: trimmed,
+          description: createDescription,
+          retain_repo_versions: null,
+          remote: createRemote.trim() === "" ? null : createRemote.trim(),
+          autopublish: createAutopublish,
+          metadata_signing_service: null,
+          retain_package_versions: null,
+          metadata_checksum_type: null,
+          package_checksum_type: null,
+          gpgcheck: null,
+          repo_gpgcheck: null,
+          sqlite_metadata: false,
+        };
+
+        const result = await pulpRepositoryManagementService.createRpm(payload);
+        setCreateResult(result);
+        setCreateName("");
+        resetRpmCreateFields();
+      } else {
+        const result = await pulpRepositoryManagementService.createDeb(trimmed);
+        setCreateResult(result);
+        setCreateName("");
+      }
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create failed.");
@@ -622,6 +659,39 @@ export default function RepositoriesListPage() {
                   disabled={isCreating}
                 />
               </FormField>
+              {createKind === "rpm" ? (
+                <div className="space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                  <FormField label="Description">
+                    <textarea
+                      className={rpmCreateTextareaClass}
+                      value={createDescription}
+                      onChange={(e) => setCreateDescription(e.target.value)}
+                      disabled={isCreating}
+                      rows={2}
+                      placeholder="Optional"
+                    />
+                  </FormField>
+                  <FormField label="Remote">
+                    <Input
+                      value={createRemote}
+                      onChange={(e) => setCreateRemote(e.target.value)}
+                      disabled={isCreating}
+                      placeholder="Optional — Pulp remote href for sync"
+                      className="font-mono text-xs"
+                    />
+                  </FormField>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 shrink-0 rounded border-zinc-300 dark:border-zinc-600"
+                      checked={createAutopublish}
+                      disabled={isCreating}
+                      onChange={(e) => setCreateAutopublish(e.target.checked)}
+                    />
+                    Autopublish new repository versions after sync
+                  </label>
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={isCreating}>
                   {isCreating ? "Creating…" : "Create"}

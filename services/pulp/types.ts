@@ -113,6 +113,23 @@ export type RpmRepositoryUpdatePayload = {
   sqlite_metadata: boolean;
 };
 
+/** POST /repositories/rpm/rpm/ — matches Pulp RPM repository create body. */
+export type RpmRepositoryCreatePayload = {
+  pulp_labels: Record<string, string>;
+  name: string;
+  description: string;
+  retain_repo_versions: number | null;
+  remote: string | null;
+  autopublish: boolean;
+  metadata_signing_service: string | null;
+  retain_package_versions: number | null;
+  metadata_checksum_type: string | null;
+  package_checksum_type: string | null;
+  gpgcheck: number | null;
+  repo_gpgcheck: number | null;
+  sqlite_metadata: boolean;
+};
+
 export type DebRepositoryUpdatePayload = {
   name: string;
   description: string | null;

@@ -4,6 +4,7 @@ import {
   PulpPaginatedResponse,
   PulpRepositoryDetail,
   PulpRpmRepository,
+  RpmRepositoryCreatePayload,
   RpmRepositoryUpdatePayload,
   PulpRpmRepositoryVersion,
   RpmRepositoryVersionsListResult,
@@ -44,11 +45,11 @@ export const pulpRepositoryManagementService = {
     return (await response.json()) as PulpPaginatedResponse<PulpRpmRepository>;
   },
 
-  async createRpm(name: string): Promise<RepositoryCreateResult> {
+  async createRpm(payload: RpmRepositoryCreatePayload): Promise<RepositoryCreateResult> {
     const response = await fetch("/api/pulp/repositories/rpm/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error(await readApiDetail(response));
     return (await response.json()) as RepositoryCreateResult;

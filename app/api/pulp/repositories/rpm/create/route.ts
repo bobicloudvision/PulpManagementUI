@@ -1,11 +1,37 @@
 import { cookies } from "next/headers";
 import { getPulpApiUrl, PULP_AUTH_COOKIE, toBasicAuthHeader } from "@/lib/pulp";
 import { requirePulpAuth } from "@/app/api/pulp/_helpers";
+import type { RpmRepositoryCreatePayload } from "@/services/pulp/types";
 import { authHeaders, hrefFromCreatedResource, readDetail, TaskRefResponse, waitForTask } from "../../_server";
 
-type CreateBody = {
-  name?: string;
-};
+function trimOrNull(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") return null;
+  const t = value.trim();
+  return t === "" ? null : t;
+}
+
+function parseLabels(value: unknown): Record<string, string> | null {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v !== "string") return null;
+    out[k] = v;
+  }
+  return out;
+}
+
+function parseNullableInt(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number" && Number.isInteger(value)) return value;
+  if (typeof value === "string" && value.trim() === "") return null;
+  if (typeof value === "string") {
+    const n = Number.parseInt(value, 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
 
 export async function POST(request: Request) {
   const authResult = await requirePulpAuth();
@@ -13,11 +39,36 @@ export async function POST(request: Request) {
     return authResult.response;
   }
 
-  const body = (await request.json()) as CreateBody;
-  const name = body.name?.trim();
+  const raw = (await request.json()) as Record<string, unknown>;
+  const name = typeof raw.name === "string" ? raw.name.trim() : "";
   if (!name) {
     return Response.json({ detail: "Repository name is required." }, { status: 400 });
   }
+
+  const labels = parseLabels(raw.pulp_labels);
+  if (labels === null) {
+    return Response.json({ detail: "pulp_labels must be a JSON object with string values." }, { status: 400 });
+  }
+
+  const description = typeof raw.description === "string" ? raw.description : "";
+  const autopublish = Boolean(raw.autopublish);
+  const sqlite_metadata = Boolean(raw.sqlite_metadata);
+
+  const payload: RpmRepositoryCreatePayload = {
+    pulp_labels: labels,
+    name,
+    description,
+    retain_repo_versions: parseNullableInt(raw.retain_repo_versions),
+    remote: trimOrNull(raw.remote),
+    autopublish,
+    metadata_signing_service: trimOrNull(raw.metadata_signing_service),
+    retain_package_versions: parseNullableInt(raw.retain_package_versions),
+    metadata_checksum_type: trimOrNull(raw.metadata_checksum_type),
+    package_checksum_type: trimOrNull(raw.package_checksum_type),
+    gpgcheck: parseNullableInt(raw.gpgcheck),
+    repo_gpgcheck: parseNullableInt(raw.repo_gpgcheck),
+    sqlite_metadata,
+  };
 
   const authHeader = toBasicAuthHeader(authResult.auth);
   const headers = authHeaders(authHeader);
@@ -26,7 +77,7 @@ export async function POST(request: Request) {
   const createResponse = await fetch(getPulpApiUrl("/repositories/rpm/rpm/"), {
     method: "POST",
     headers,
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(payload),
     cache: "no-store",
   });
 
@@ -54,7 +105,7 @@ export async function POST(request: Request) {
   }
 
   return Response.json({
-    name,
+    name: payload.name,
     pulp_href: pulpHref,
     task: created.task ?? null,
   });
