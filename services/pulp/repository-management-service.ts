@@ -1,5 +1,6 @@
 import { readApiDetail } from "./http";
 import {
+  DebRepositoryCreatePayload,
   DebRepositoryUpdatePayload,
   PulpPaginatedResponse,
   PulpRepositoryDetail,
@@ -55,11 +56,11 @@ export const pulpRepositoryManagementService = {
     return (await response.json()) as RepositoryCreateResult;
   },
 
-  async createDeb(name: string): Promise<RepositoryCreateResult> {
+  async createDeb(payload: DebRepositoryCreatePayload): Promise<RepositoryCreateResult> {
     const response = await fetch("/api/pulp/repositories/deb/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error(await readApiDetail(response));
     return (await response.json()) as RepositoryCreateResult;

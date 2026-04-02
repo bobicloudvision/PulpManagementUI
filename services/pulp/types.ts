@@ -139,6 +139,15 @@ export type DebRepositoryUpdatePayload = {
   structured_repo: boolean;
 };
 
+/** POST /repositories/deb/apt/ — matches Pulp Debian APT repository create body. */
+export type DebRepositoryCreatePayload = {
+  pulp_labels: Record<string, string>;
+  name: string;
+  description: string;
+  retain_repo_versions: number | null;
+  remote: string | null;
+};
+
 /** Per-type counts in repository version content_summary (e.g. rpm.package). */
 export type PulpRpmRepositoryVersionContentKind = {
   count: number;

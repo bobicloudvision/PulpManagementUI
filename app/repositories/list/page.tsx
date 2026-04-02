@@ -46,10 +46,11 @@ import {
 import {
   PulpDistribution,
   PulpRpmRepository,
+  type DebRepositoryCreatePayload,
   type RpmRepositoryCreatePayload,
 } from "@/services/pulp/types";
 
-const rpmCreateTextareaClass =
+const repoCreateTextareaClass =
   "min-h-[4rem] w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700";
 
 function distributionUrlByRepositoryHref(distributions: PulpDistribution[]): Record<string, string> {
@@ -120,7 +121,7 @@ export default function RepositoriesListPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [createResult, setCreateResult] = useState<RepositoryCreateResult | null>(null);
 
-  function resetRpmCreateFields() {
+  function resetCreateRepositoryFields() {
     setCreateDescription("");
     setCreateRemote("");
     setCreateAutopublish(false);
@@ -170,7 +171,7 @@ export default function RepositoriesListPage() {
   function openCreateModal() {
     setCreateKind(kind);
     setCreateName("");
-    resetRpmCreateFields();
+    resetCreateRepositoryFields();
     setCreateResult(null);
     setError(null);
     setCreateModalOpen(true);
@@ -231,11 +232,19 @@ export default function RepositoriesListPage() {
         const result = await pulpRepositoryManagementService.createRpm(payload);
         setCreateResult(result);
         setCreateName("");
-        resetRpmCreateFields();
+        resetCreateRepositoryFields();
       } else {
-        const result = await pulpRepositoryManagementService.createDeb(trimmed);
+        const debPayload: DebRepositoryCreatePayload = {
+          pulp_labels: {},
+          name: trimmed,
+          description: createDescription,
+          retain_repo_versions: null,
+          remote: createRemote.trim() === "" ? null : createRemote.trim(),
+        };
+        const result = await pulpRepositoryManagementService.createDeb(debPayload);
         setCreateResult(result);
         setCreateName("");
+        resetCreateRepositoryFields();
       }
       await load();
     } catch (e) {
@@ -659,27 +668,31 @@ export default function RepositoriesListPage() {
                   disabled={isCreating}
                 />
               </FormField>
-              {createKind === "rpm" ? (
-                <div className="space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                  <FormField label="Description">
-                    <textarea
-                      className={rpmCreateTextareaClass}
-                      value={createDescription}
-                      onChange={(e) => setCreateDescription(e.target.value)}
-                      disabled={isCreating}
-                      rows={2}
-                      placeholder="Optional"
-                    />
-                  </FormField>
-                  <FormField label="Remote">
-                    <Input
-                      value={createRemote}
-                      onChange={(e) => setCreateRemote(e.target.value)}
-                      disabled={isCreating}
-                      placeholder="Optional — Pulp remote href for sync"
-                      className="font-mono text-xs"
-                    />
-                  </FormField>
+              <div className="space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                <FormField label="Description">
+                  <textarea
+                    className={repoCreateTextareaClass}
+                    value={createDescription}
+                    onChange={(e) => setCreateDescription(e.target.value)}
+                    disabled={isCreating}
+                    rows={2}
+                    placeholder="Optional"
+                  />
+                </FormField>
+                <FormField label="Remote">
+                  <Input
+                    value={createRemote}
+                    onChange={(e) => setCreateRemote(e.target.value)}
+                    disabled={isCreating}
+                    placeholder={
+                      createKind === "deb"
+                        ? "Optional — Pulp APT remote href for sync"
+                        : "Optional — Pulp RPM remote href for sync"
+                    }
+                    className="font-mono text-xs"
+                  />
+                </FormField>
+                {createKind === "rpm" ? (
                   <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                     <input
                       type="checkbox"
@@ -690,8 +703,8 @@ export default function RepositoriesListPage() {
                     />
                     Autopublish new repository versions after sync
                   </label>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={isCreating}>
                   {isCreating ? "Creating…" : "Create"}
