@@ -12,9 +12,7 @@ type ManagementSidebarProps = {
 
 type NavIconName =
   | "users"
-  | "user-plus"
   | "groups"
-  | "group-plus"
   | "distribution"
   | "content"
   | "upload"
@@ -30,17 +28,11 @@ type NavItem = {
 const navSections = [
   {
     title: "Identity",
-    items: [
-      { href: "/users/list", label: "Users", hint: "Browse all users", icon: "users" },
-      { href: "/users/create", label: "Create user", hint: "Add a new account", icon: "user-plus" },
-    ] satisfies NavItem[],
+    items: [{ href: "/users/list", label: "Users", hint: "Browse and manage users", icon: "users" }] satisfies NavItem[],
   },
   {
     title: "Access",
-    items: [
-      { href: "/groups/list", label: "Groups", hint: "Manage team groups", icon: "groups" },
-      { href: "/groups/create", label: "Create group", hint: "Create access group", icon: "group-plus" },
-    ] satisfies NavItem[],
+    items: [{ href: "/groups/list", label: "Groups", hint: "Manage team groups", icon: "groups" }] satisfies NavItem[],
   },
   {
     title: "Delivery",
@@ -78,15 +70,6 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <path d="M17.5 5.3A3 3 0 0 1 18.3 11" />
         </svg>
       );
-    case "user-plus":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" className={iconClassName}>
-          <circle cx="9" cy="8.5" r="3" />
-          <path d="M4 19c0-2.5 2-4.5 4.5-4.5h1" />
-          <path d="M16.5 8v6" />
-          <path d="M13.5 11h6" />
-        </svg>
-      );
     case "groups":
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" className={iconClassName}>
@@ -94,15 +77,6 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <circle cx="16.5" cy="8.5" r="2.3" />
           <path d="M3.5 18c0-2.4 2-4.3 4.5-4.3S12.5 15.6 12.5 18" />
           <path d="M13.2 18c0-1.9 1.6-3.4 3.6-3.4S20.4 16.1 20.4 18" />
-        </svg>
-      );
-    case "group-plus":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" className={iconClassName}>
-          <circle cx="8" cy="9" r="2.8" />
-          <path d="M3.5 18c0-2.4 2-4.3 4.5-4.3S12.5 15.6 12.5 18" />
-          <path d="M18 8.5v5" />
-          <path d="M15.5 11h5" />
         </svg>
       );
     case "distribution":

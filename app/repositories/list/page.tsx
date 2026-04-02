@@ -12,7 +12,18 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { pulpDistributionService } from "@/services/pulp/distribution-service";
 import { pulpRepositoryManagementService } from "@/services/pulp/repository-management-service";
-import { PulpRpmRepository } from "@/services/pulp/types";
+import { PulpDistribution, PulpRpmRepository } from "@/services/pulp/types";
+
+function distributionUrlByRepositoryHref(distributions: PulpDistribution[]): Record<string, string> {
+  const sorted = [...distributions].sort((a, b) => a.name.localeCompare(b.name));
+  const map: Record<string, string> = {};
+  for (const d of sorted) {
+    if (d.repository && d.base_url && map[d.repository] === undefined) {
+      map[d.repository] = d.base_url;
+    }
+  }
+  return map;
+}
 import {
   Table,
   TableBody,
@@ -36,6 +47,7 @@ export default function RepositoriesListPage() {
   const [items, setItems] = useState<PulpRpmRepository[]>([]);
   const [count, setCount] = useState(0);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+  const [distributionUrlByRepo, setDistributionUrlByRepo] = useState<Record<string, string>>({});
   const [busyHref, setBusyHref] = useState<string | null>(null);
   const [publishResult, setPublishResult] = useState<{
     repoName: string;
@@ -62,9 +74,16 @@ export default function RepositoriesListPage() {
           : await pulpRepositoryManagementService.listDeb();
       setItems(page.results);
       setCount(page.count);
+      try {
+        const distributions = await pulpDistributionService.list();
+        setDistributionUrlByRepo(distributionUrlByRepositoryHref(distributions));
+      } catch {
+        setDistributionUrlByRepo({});
+      }
     } catch (e) {
       setItems([]);
       setCount(0);
+      setDistributionUrlByRepo({});
       setError(e instanceof Error ? e.message : "Failed to load repositories.");
     } finally {
       setIsLoadingRepos(false);
@@ -115,6 +134,7 @@ export default function RepositoriesListPage() {
         base_path: result.base_path,
         task: result.task,
       });
+      await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create distribution.");
     } finally {
@@ -273,15 +293,30 @@ export default function RepositoriesListPage() {
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>Name</TableHeaderCell>
-                    <TableHeaderCell>Pulp href</TableHeaderCell>
+                    <TableHeaderCell>Distribution URL</TableHeaderCell>
                     <TableHeaderCell className="text-right">Actions</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
+                  </TableRow>  
+                </TableHead> 
                 <TableBody>
-                  {items.map((repo) => (
+                  {items.map((repo) => {
+                    const distributionUrl = distributionUrlByRepo[repo.pulp_href];
+                    return (
                     <TableRow key={repo.pulp_href} frozen={busyHref === repo.pulp_href}>
                       <TableCell className="font-medium">{repo.name}</TableCell>
-                      <TableCell className="max-w-md truncate font-mono text-xs">{repo.pulp_href}</TableCell>
+                      <TableCell className="max-w-md">
+                        {distributionUrl ? (
+                          <a
+                            href={distributionUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="break-all font-mono text-xs text-sky-800 underline decoration-sky-400/80 underline-offset-2 hover:text-sky-950 dark:text-sky-300 dark:hover:text-sky-100"
+                          >
+                            {distributionUrl}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap justify-end gap-2">
                           <Link
@@ -336,7 +371,8 @@ export default function RepositoriesListPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableWrapper>
