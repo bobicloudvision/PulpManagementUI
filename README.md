@@ -37,7 +37,7 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 
 ## Screenshot
 
-![Dashboard with summary counts, cache notice, shortcuts, and session](screenshots/screenshot4.png)
+![Dashboard with summary counts, cache notice, shortcuts, and session](screenshots/screenshot.png)
 
 ## Getting started
 
