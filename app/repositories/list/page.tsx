@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
@@ -10,6 +10,15 @@ import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TableWrapper,
+} from "@/components/ui/table";
 import { pulpDistributionService } from "@/services/pulp/distribution-service";
 import { pulpRepositoryManagementService } from "@/services/pulp/repository-management-service";
 import { PulpDistribution, PulpRpmRepository } from "@/services/pulp/types";
@@ -24,19 +33,22 @@ function distributionUrlByRepositoryHref(distributions: PulpDistribution[]): Rec
   }
   return map;
 }
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-  TableWrapper,
-} from "@/components/ui/table";
+
+/** Distributions this UI can delete via `/api/pulp/distributions/[id]` (RPM only). */
+function rpmDistributionsForRepository(
+  distributions: PulpDistribution[],
+  repoPulpHref: string
+): PulpDistribution[] {
+  return distributions.filter(
+    (d) => d.repository === repoPulpHref && /\/distributions\/rpm\/rpm\/[^/]+\/?$/.test(d.pulp_href)
+  );
+}
 
 type RepoKind = "rpm" | "deb";
 
 export default function RepositoriesListPage() {
+  const deleteDialogTitleId = useId();
+
   const { sessionUser, isLoading, isCheckingSession, hasSession, error, setError, logout } =
     usePulpAuthContext();
   const isRedirectingToLogin = useRequireAuth({ hasSession, isCheckingSession });
@@ -47,8 +59,12 @@ export default function RepositoriesListPage() {
   const [items, setItems] = useState<PulpRpmRepository[]>([]);
   const [count, setCount] = useState(0);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+  const [distributions, setDistributions] = useState<PulpDistribution[]>([]);
   const [distributionUrlByRepo, setDistributionUrlByRepo] = useState<Record<string, string>>({});
   const [busyHref, setBusyHref] = useState<string | null>(null);
+  const [deleteModalRepo, setDeleteModalRepo] = useState<PulpRpmRepository | null>(null);
+  const [deleteAlsoDistributions, setDeleteAlsoDistributions] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [publishResult, setPublishResult] = useState<{
     repoName: string;
     publication: string | null;
@@ -75,14 +91,17 @@ export default function RepositoriesListPage() {
       setItems(page.results);
       setCount(page.count);
       try {
-        const distributions = await pulpDistributionService.list();
-        setDistributionUrlByRepo(distributionUrlByRepositoryHref(distributions));
+        const distList = await pulpDistributionService.list();
+        setDistributions(distList);
+        setDistributionUrlByRepo(distributionUrlByRepositoryHref(distList));
       } catch {
+        setDistributions([]);
         setDistributionUrlByRepo({});
       }
     } catch (e) {
       setItems([]);
       setCount(0);
+      setDistributions([]);
       setDistributionUrlByRepo({});
       setError(e instanceof Error ? e.message : "Failed to load repositories.");
     } finally {
@@ -142,23 +161,76 @@ export default function RepositoriesListPage() {
     }
   }
 
-  async function handleDelete(repo: PulpRpmRepository) {
-    if (!window.confirm(`Delete repository "${repo.name}"?`)) return;
+  function openDeleteModal(repo: PulpRpmRepository) {
+    setDeleteModalRepo(repo);
+    const linked = rpmDistributionsForRepository(distributions, repo.pulp_href);
+    setDeleteAlsoDistributions(linked.length > 0);
+  }
+
+  function closeDeleteModal() {
+    if (isDeleting) return;
+    setDeleteModalRepo(null);
+  }
+
+  useEffect(() => {
+    if (!deleteModalRepo) {
+      return;
+    }
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isDeleting) {
+        setDeleteModalRepo(null);
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [deleteModalRepo, isDeleting]);
+
+  async function confirmDeleteRepository() {
+    const repo = deleteModalRepo;
+    if (!repo) return;
+
+    const linked = rpmDistributionsForRepository(distributions, repo.pulp_href);
     setBusyHref(repo.pulp_href);
     setError(null);
+    setIsDeleting(true);
     try {
+      if (deleteAlsoDistributions && kind === "rpm" && linked.length > 0) {
+        for (const d of linked) {
+          const removed = await pulpDistributionService.remove(d.pulp_href);
+          if (!removed.ok) {
+            throw new Error(removed.detail);
+          }
+        }
+      }
+
       if (kind === "rpm") {
         await pulpRepositoryManagementService.deleteRpm(repo.pulp_href);
       } else {
         await pulpRepositoryManagementService.deleteDeb(repo.pulp_href);
       }
+
+      setDeleteModalRepo(null);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Delete failed.");
     } finally {
       setBusyHref(null);
+      setIsDeleting(false);
     }
   }
+
+  const deleteModalLinked =
+    deleteModalRepo && kind === "rpm"
+      ? rpmDistributionsForRepository(distributions, deleteModalRepo.pulp_href)
+      : [];
 
   return (
     <AdminShell
@@ -166,7 +238,7 @@ export default function RepositoriesListPage() {
       description="List RPM and Debian repositories, publish, create RPM distributions, inspect content, or remove a repository."
       hasSession={hasSession}
       sessionUser={sessionUser}
-      isLoading={isLoading || isLoadingRepos}
+      isLoading={isLoading || isLoadingRepos || isDeleting}
       usersCount={users.length}
       groupsCount={groups.length}
       error={error}
@@ -364,7 +436,7 @@ export default function RepositoriesListPage() {
                             variant="outline"
                             className="border-red-300 text-xs text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                             disabled={busyHref === repo.pulp_href}
-                            onClick={() => handleDelete(repo)}
+                            onClick={() => openDeleteModal(repo)}
                           >
                             Delete
                           </Button>
@@ -379,6 +451,83 @@ export default function RepositoriesListPage() {
           </CardContent>
         </Card>
       )}
+
+      {deleteModalRepo ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/50 p-4 sm:items-center"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isDeleting) {
+              closeDeleteModal();
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={deleteDialogTitleId}
+            className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-950"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2
+              id={deleteDialogTitleId}
+              className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+            >
+              Delete repository?
+            </h2>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">{deleteModalRepo.name}</span>
+              <span className="mt-1 block break-all font-mono text-xs text-zinc-500 dark:text-zinc-500">
+                {deleteModalRepo.pulp_href}
+              </span>
+            </p>
+            {kind === "rpm" ? (
+              deleteModalLinked.length > 0 ? (
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                    checked={deleteAlsoDistributions}
+                    disabled={isDeleting}
+                    onChange={(e) => setDeleteAlsoDistributions(e.target.checked)}
+                  />
+                  <span>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      Also delete linked RPM distribution
+                      {deleteModalLinked.length > 1 ? "s" : ""}
+                    </span>
+                    <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                      {deleteModalLinked.map((d) => d.name).join(", ")}
+                    </span>
+                  </span>
+                </label>
+              ) : (
+                <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                  No RPM distribution in the list is linked to this repository.
+                </p>
+              )
+            ) : (
+              <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                Debian repositories: only the repository will be removed (this app does not delete
+                APT distributions from here).
+              </p>
+            )}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button type="button" variant="outline" disabled={isDeleting} onClick={closeDeleteModal}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="border-red-300 bg-red-600 text-white hover:bg-red-700 dark:border-red-800 dark:bg-red-700 dark:hover:bg-red-600"
+                disabled={isDeleting}
+                onClick={() => void confirmDeleteRepository()}
+              >
+                {isDeleting ? "Deleting…" : "Delete repository"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminShell>
   );
 }
