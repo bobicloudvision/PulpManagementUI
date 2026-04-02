@@ -279,7 +279,7 @@ export default function RepositoriesListPage() {
                 </TableHead>
                 <TableBody>
                   {items.map((repo) => (
-                    <TableRow key={repo.pulp_href}>
+                    <TableRow key={repo.pulp_href} frozen={busyHref === repo.pulp_href}>
                       <TableCell className="font-medium">{repo.name}</TableCell>
                       <TableCell className="max-w-md truncate font-mono text-xs">{repo.pulp_href}</TableCell>
                       <TableCell className="text-right">

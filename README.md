@@ -29,9 +29,11 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 
 ## Screenshots
 
-### RPM package detail
+Assets live in [`screenshots/`](screenshots/).
 
-![RPM package instance with checksums and dependencies](screenshots/screenshot1.png)
+### RPM repositories list
+
+![Repositories list with RPM/DEB toggle, actions, and session](screenshots/screenshot1.png)
 
 ### Distributions
 
@@ -40,14 +42,6 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 ### Content list
 
 ![RPM content list with pagination](screenshots/screenshot3.png)
-
-### Upload sessions
-
-![Chunked uploads list](screenshots/screenshot4.png)
-
-### Upload file
-
-![Chunked upload form](screenshots/screenshot5.png)
 
 ## Getting started
 
