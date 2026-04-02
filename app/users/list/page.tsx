@@ -7,7 +7,7 @@ import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
 import { useRequireAuth } from "@/components/pulp/use-require-auth";
 import { usePulpUsers } from "@/components/pulp/use-pulp-users";
-import { CreatePulpUserPayload } from "@/services/pulp/types";
+import { CreatePulpUserPayload, UpdatePulpUserPayload } from "@/services/pulp/types";
 import { Button } from "@/components/ui/button";
 import { CheckboxField, FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ export default function UsersListPage() {
   const { groups } = usePulpGroups(hasSession);
 
   const createDialogTitleId = useId();
+  const editDialogTitleId = useId();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createUsername, setCreateUsername] = useState("");
@@ -41,32 +42,54 @@ export default function UsersListPage() {
 
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editUsername, setEditUsername] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editIsStaff, setEditIsStaff] = useState(false);
   const [editIsActive, setEditIsActive] = useState(true);
 
+  const resetEditForm = useCallback(() => {
+    setEditUsername("");
+    setEditFirstName("");
+    setEditLastName("");
+    setEditEmail("");
+    setEditIsStaff(false);
+    setEditIsActive(true);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setEditingUserId(null);
+    resetEditForm();
+  }, [resetEditForm]);
+
   function startEditUser(user: (typeof users)[number]) {
     setEditingUserId(user.id);
     setEditUsername(user.username);
+    setEditFirstName(user.first_name);
+    setEditLastName(user.last_name);
     setEditEmail(user.email);
     setEditIsStaff(user.is_staff);
     setEditIsActive(user.is_active);
   }
 
-  function cancelEditUser() {
-    setEditingUserId(null);
-  }
+  async function handleEditUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (editingUserId === null) {
+      return;
+    }
 
-  async function saveUser(userId: number) {
-    const success = await updateUser(userId, {
+    const payload: UpdatePulpUserPayload = {
       username: editUsername,
+      first_name: editFirstName,
+      last_name: editLastName,
       email: editEmail,
       is_staff: editIsStaff,
       is_active: editIsActive,
-    });
+    };
 
+    const success = await updateUser(editingUserId, payload);
     if (success) {
-      setEditingUserId(null);
+      closeEditModal();
     }
   }
 
@@ -114,8 +137,10 @@ export default function UsersListPage() {
     closeCreateModal();
   }
 
+  const anyModalOpen = createModalOpen || editingUserId !== null;
+
   useEffect(() => {
-    if (!createModalOpen) {
+    if (!anyModalOpen) {
       return;
     }
 
@@ -123,7 +148,12 @@ export default function UsersListPage() {
     document.body.style.overflow = "hidden";
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (editingUserId !== null) {
+        closeEditModal();
+      } else {
         setCreateModalOpen(false);
         resetCreateForm();
       }
@@ -134,7 +164,7 @@ export default function UsersListPage() {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
     };
-  }, [createModalOpen, resetCreateForm]);
+  }, [anyModalOpen, editingUserId, closeEditModal, resetCreateForm]);
 
   return (
     <AdminShell
@@ -173,82 +203,31 @@ export default function UsersListPage() {
                 <TableBody>
                   {users.map((user) => (
                     <TableRow key={user.id}>
-                        {editingUserId === user.id ? (
-                          <>
-                            <TableCell>
-                              <Input
-                                value={editUsername}
-                                onChange={(event) => setEditUsername(event.target.value)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="email"
-                                value={editEmail}
-                                onChange={(event) => setEditEmail(event.target.value)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4"
-                                checked={editIsStaff}
-                                onChange={(event) => setEditIsStaff(event.target.checked)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4"
-                                checked={editIsActive}
-                                onChange={(event) => setEditIsActive(event.target.checked)}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={cancelEditUser}
-                                  disabled={isLoading}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button type="button" onClick={() => saveUser(user.id)} disabled={isLoading}>
-                                  Save
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </>
-                        ) : (
-                          <>
-                            <TableCell className="font-medium">{user.username}</TableCell>
-                            <TableCell>{user.email || "-"}</TableCell>
-                            <TableCell>{String(user.is_staff)}</TableCell>
-                            <TableCell>{String(user.is_active)}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => startEditUser(user)}
-                                  disabled={isLoading}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
-                                  onClick={() => removeUser(user.id)}
-                                  disabled={isLoading}
-                                >
-                                  Delete
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </>
-                        )}
+                      <TableCell className="font-medium">{user.username}</TableCell>
+                      <TableCell>{user.email || "-"}</TableCell>
+                      <TableCell>{String(user.is_staff)}</TableCell>
+                      <TableCell>{String(user.is_active)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => startEditUser(user)}
+                            disabled={isLoading}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                            onClick={() => removeUser(user.id)}
+                            disabled={isLoading}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -350,6 +329,95 @@ export default function UsersListPage() {
                 </Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? "Creating..." : "Create user"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {editingUserId !== null ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/50 p-4 sm:items-center"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeEditModal();
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={editDialogTitleId}
+            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-950"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id={editDialogTitleId} className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Edit user
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Update account details on your connected Pulp server.
+            </p>
+            <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={handleEditUser}>
+              <FormField label="Username">
+                <Input
+                  value={editUsername}
+                  onChange={(event) => setEditUsername(event.target.value)}
+                  required
+                  autoComplete="username"
+                />
+              </FormField>
+
+              <FormField label="Email">
+                <Input
+                  type="email"
+                  value={editEmail}
+                  onChange={(event) => setEditEmail(event.target.value)}
+                  autoComplete="email"
+                />
+              </FormField>
+
+              <FormField label="First name">
+                <Input
+                  value={editFirstName}
+                  onChange={(event) => setEditFirstName(event.target.value)}
+                  autoComplete="given-name"
+                />
+              </FormField>
+
+              <FormField label="Last name">
+                <Input
+                  value={editLastName}
+                  onChange={(event) => setEditLastName(event.target.value)}
+                  autoComplete="family-name"
+                />
+              </FormField>
+
+              <CheckboxField label="Is staff">
+                <Input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
+                  checked={editIsStaff}
+                  onChange={(event) => setEditIsStaff(event.target.checked)}
+                />
+              </CheckboxField>
+
+              <CheckboxField label="Is active">
+                <Input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-zinc-300 p-0 dark:border-zinc-700"
+                  checked={editIsActive}
+                  onChange={(event) => setEditIsActive(event.target.checked)}
+                />
+              </CheckboxField>
+
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <Button type="button" variant="outline" onClick={closeEditModal} disabled={isLoading}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Saving..." : "Save changes"}
                 </Button>
               </div>
             </form>
