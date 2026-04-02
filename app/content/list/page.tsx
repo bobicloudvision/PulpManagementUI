@@ -35,7 +35,7 @@ export default function ContentListPage() {
     canGoPrevious,
     goNext,
     goPrevious,
-  } = usePulpContent(hasSession, 50);
+  } = usePulpContent(hasSession, 20);
 
   return (
     <AdminShell

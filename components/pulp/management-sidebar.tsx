@@ -39,7 +39,6 @@ const navSections = [
       { href: "/repositories/list", label: "Repositories", hint: "RPM and Debian repos", icon: "repos" },
       { href: "/repositories/create", label: "Create repository", hint: "New RPM or Debian repo", icon: "repos" },
       { href: "/content/list", label: "Content", hint: "Packages and metadata", icon: "content" },
-      { href: "/uploads/list", label: "Uploads", hint: "Chunked upload sessions", icon: "upload" },
       { href: "/uploads/create", label: "Upload file", hint: "Send file to Pulp", icon: "upload" },
     ] satisfies NavItem[],
   },

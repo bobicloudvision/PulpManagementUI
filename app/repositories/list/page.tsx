@@ -11,6 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  GitBranch,
+  MoreVertical,
+  Package,
+  Pencil,
+  Share2,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import {
   Table,
   TableBody,
   TableCell,
@@ -384,56 +400,73 @@ export default function RepositoriesListPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Link
-                            href={`/repositories/edit?kind=${kind}&pulp_href=${encodeURIComponent(repo.pulp_href)}`}
-                            className="inline-flex rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
-                          >
-                            Edit
-                          </Link>
-                          {kind === "rpm" ? (
-                            <Link
-                              href={`/repositories/versions?pulp_href=${encodeURIComponent(repo.pulp_href)}`}
-                              className="inline-flex rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
-                            >
-                              Versions
-                            </Link>
-                          ) : null}
-                          <Link
-                            href={`/repositories/content?pulp_href=${encodeURIComponent(repo.pulp_href)}`}
-                            className="inline-flex rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
-                          >
-                            Content
-                          </Link>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="text-xs"
-                            disabled={busyHref === repo.pulp_href}
-                            onClick={() => handlePublish(repo)}
-                          >
-                            Publish
-                          </Button>
-                          {kind === "rpm" ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="text-xs"
-                              disabled={busyHref === repo.pulp_href}
-                              onClick={() => handleDistribute(repo)}
-                            >
-                              Distribute
-                            </Button>
-                          ) : null}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="border-red-300 text-xs text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
-                            disabled={busyHref === repo.pulp_href}
-                            onClick={() => openDeleteModal(repo)}
-                          >
-                            Delete
-                          </Button>
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                disabled={busyHref === repo.pulp_href}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-300 text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                                aria-label={`Actions for ${repo.name}`}
+                              >
+                                <MoreVertical className="size-4" strokeWidth={2} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-[11rem]">
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  href={`/repositories/edit?kind=${kind}&pulp_href=${encodeURIComponent(repo.pulp_href)}`}
+                                >
+                                  <Pencil className="size-4" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              {kind === "rpm" ? (
+                                <DropdownMenuItem asChild>
+                                  <Link
+                                    href={`/repositories/versions?pulp_href=${encodeURIComponent(repo.pulp_href)}`}
+                                  >
+                                    <GitBranch className="size-4" />
+                                    Versions
+                                  </Link>
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  href={`/repositories/content?pulp_href=${encodeURIComponent(repo.pulp_href)}`}
+                                >
+                                  <Package className="size-4" />
+                                  Content
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                disabled={busyHref === repo.pulp_href}
+                                onSelect={() => void handlePublish(repo)}
+                              >
+                                <Upload className="size-4" />
+                                Publish
+                              </DropdownMenuItem>
+                              {kind === "rpm" ? (
+                                <DropdownMenuItem
+                                  disabled={busyHref === repo.pulp_href}
+                                  onSelect={() => void handleDistribute(repo)}
+                                >
+                                  <Share2 className="size-4" />
+                                  Distribute
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                disabled={busyHref === repo.pulp_href}
+                                onSelect={() => openDeleteModal(repo)}
+                              >
+                                <Trash2 className="size-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
