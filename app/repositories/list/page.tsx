@@ -10,6 +10,7 @@ import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
+import { pulpDistributionService } from "@/services/pulp/distribution-service";
 import { pulpRepositoryManagementService } from "@/services/pulp/repository-management-service";
 import { PulpRpmRepository } from "@/services/pulp/types";
 import {
@@ -41,6 +42,14 @@ export default function RepositoriesListPage() {
     publication: string | null;
     task: string | null;
   } | null>(null);
+  const [distributeResult, setDistributeResult] = useState<{
+    repoName: string;
+    name: string;
+    pulp_href: string | null;
+    base_url: string | null;
+    base_path: string;
+    task: string | null;
+  } | null>(null);
 
   const load = useCallback(async () => {
     if (!hasSession) return;
@@ -70,6 +79,7 @@ export default function RepositoriesListPage() {
     setBusyHref(repo.pulp_href);
     setError(null);
     setPublishResult(null);
+    setDistributeResult(null);
     try {
       const result =
         kind === "rpm"
@@ -83,6 +93,30 @@ export default function RepositoriesListPage() {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Publish failed.");
+    } finally {
+      setBusyHref(null);
+    }
+  }
+
+  async function handleDistribute(repo: PulpRpmRepository) {
+    setBusyHref(repo.pulp_href);
+    setError(null);
+    setDistributeResult(null);
+    try {
+      const result = await pulpDistributionService.createRpmDistributionForRepository(
+        repo.pulp_href,
+        repo.name
+      );
+      setDistributeResult({
+        repoName: repo.name,
+        name: result.name,
+        pulp_href: result.pulp_href,
+        base_url: result.base_url,
+        base_path: result.base_path,
+        task: result.task,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create distribution.");
     } finally {
       setBusyHref(null);
     }
@@ -109,7 +143,7 @@ export default function RepositoriesListPage() {
   return (
     <AdminShell
       title="Repositories"
-      description="List RPM and Debian repositories, publish new publications, inspect content, or remove a repository."
+      description="List RPM and Debian repositories, publish, create RPM distributions, inspect content, or remove a repository."
       hasSession={hasSession}
       sessionUser={sessionUser}
       isLoading={isLoading || isLoadingRepos}
@@ -133,6 +167,7 @@ export default function RepositoriesListPage() {
                   type="button"
                   onClick={() => {
                     setPublishResult(null);
+                    setDistributeResult(null);
                     setKind(k);
                   }}
                   className={cn(
@@ -150,6 +185,7 @@ export default function RepositoriesListPage() {
                 variant="outline"
                 onClick={() => {
                   setPublishResult(null);
+                  setDistributeResult(null);
                   void load();
                 }}
                 disabled={isLoadingRepos}
@@ -186,6 +222,49 @@ export default function RepositoriesListPage() {
                     Task: {publishResult.task}
                   </p>
                 ) : null}
+              </div>
+            ) : null}
+
+            {distributeResult ? (
+              <div className="rounded-lg border border-sky-300/80 bg-sky-50/90 p-4 text-sm dark:border-sky-800 dark:bg-sky-950/35">
+                <p className="font-medium text-sky-900 dark:text-sky-100">
+                  RPM distribution created for “{distributeResult.repoName}”
+                </p>
+                <p className="mt-1 text-sky-800 dark:text-sky-200/90">
+                  <span className="font-medium">Distribution name:</span> {distributeResult.name}
+                </p>
+                <p className="mt-1 text-sky-800 dark:text-sky-200/90">
+                  <span className="font-medium">base_path:</span>{" "}
+                  <span className="font-mono text-xs">{distributeResult.base_path}</span>
+                </p>
+                {distributeResult.base_url ? (
+                  <p className="mt-2">
+                    <a
+                      href={distributeResult.base_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all font-mono text-xs text-sky-800 underline decoration-sky-400 underline-offset-2 hover:text-sky-950 dark:text-sky-200 dark:hover:text-sky-50"
+                    >
+                      {distributeResult.base_url}
+                    </a>
+                  </p>
+                ) : null}
+                {distributeResult.pulp_href ? (
+                  <p className="mt-1 break-all font-mono text-xs text-sky-800/90 dark:text-sky-300/80">
+                    {distributeResult.pulp_href}
+                  </p>
+                ) : null}
+                {distributeResult.task ? (
+                  <p className="mt-1 break-all font-mono text-xs text-sky-800/80 dark:text-sky-300/70">
+                    Task: {distributeResult.task}
+                  </p>
+                ) : null}
+                <Link
+                  href="/distributions/list"
+                  className="mt-3 inline-flex rounded-md border border-sky-400/60 bg-white/80 px-3 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-100/80 dark:border-sky-700 dark:bg-sky-950/50 dark:text-sky-100 dark:hover:bg-sky-900/60"
+                >
+                  Open distributions
+                </Link>
               </div>
             ) : null}
 
@@ -234,6 +313,17 @@ export default function RepositoriesListPage() {
                           >
                             Publish
                           </Button>
+                          {kind === "rpm" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-xs"
+                              disabled={busyHref === repo.pulp_href}
+                              onClick={() => handleDistribute(repo)}
+                            >
+                              Distribute
+                            </Button>
+                          ) : null}
                           <Button
                             type="button"
                             variant="outline"
