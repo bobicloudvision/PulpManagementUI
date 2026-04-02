@@ -59,6 +59,12 @@ export type PulpUploadAsRpmResult = {
   task: string | null;
 };
 
+export type PulpAddToRepositoryResult = {
+  repository: string | null;
+  content: string | null;
+  task: string | null;
+};
+
 export type PulpRpmPackage = {
   pulp_href: string;
   pulp_created: string;

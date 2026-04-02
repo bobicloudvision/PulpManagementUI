@@ -12,7 +12,11 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { pulpUploadService } from "@/services/pulp/upload-service";
-import { PulpUploadAsRpmResult, PulpUploadCreateResult } from "@/services/pulp/types";
+import {
+  PulpAddToRepositoryResult,
+  PulpUploadAsRpmResult,
+  PulpUploadCreateResult,
+} from "@/services/pulp/types";
 
 function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value < 0) return "-";
@@ -32,9 +36,12 @@ export default function UploadsCreatePage() {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isCreatingRpm, setIsCreatingRpm] = useState(false);
+  const [isAddingToRepository, setIsAddingToRepository] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [result, setResult] = useState<PulpUploadCreateResult | null>(null);
   const [rpmResult, setRpmResult] = useState<PulpUploadAsRpmResult | null>(null);
+  const [repositoryName, setRepositoryName] = useState("");
+  const [repositoryResult, setRepositoryResult] = useState<PulpAddToRepositoryResult | null>(null);
 
   function extractRpmPackageId(contentHref: string): string | null {
     const match = contentHref.match(/\/content\/rpm\/packages\/([^/]+)\/?$/);
@@ -52,11 +59,13 @@ export default function UploadsCreatePage() {
     setIsUploading(true);
     setResult(null);
     setRpmResult(null);
+    setRepositoryResult(null);
 
     try {
       const uploaded = await pulpUploadService.upload(selectedFile);
       setResult(uploaded);
       setSelectedFile(null);
+      setRepositoryName("");
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
     } finally {
@@ -73,6 +82,7 @@ export default function UploadsCreatePage() {
     setError(null);
     setIsCreatingRpm(true);
     setRpmResult(null);
+    setRepositoryResult(null);
 
     try {
       const created = await pulpUploadService.uploadAsRpm(result.artifact);
@@ -81,6 +91,30 @@ export default function UploadsCreatePage() {
       setError(createError instanceof Error ? createError.message : "Failed to create RPM content.");
     } finally {
       setIsCreatingRpm(false);
+    }
+  }
+
+  async function handleAddToRepository() {
+    if (!rpmResult?.content) {
+      setError("Create RPM content first.");
+      return;
+    }
+    if (!repositoryName.trim()) {
+      setError("Repository name is required.");
+      return;
+    }
+
+    setError(null);
+    setIsAddingToRepository(true);
+    setRepositoryResult(null);
+
+    try {
+      const added = await pulpUploadService.addToRepository(rpmResult.content, repositoryName.trim());
+      setRepositoryResult(added);
+    } catch (addError) {
+      setError(addError instanceof Error ? addError.message : "Failed to add to repository.");
+    } finally {
+      setIsAddingToRepository(false);
     }
   }
 
@@ -172,6 +206,40 @@ export default function UploadsCreatePage() {
                       >
                         Open package details
                       </Link>
+                    ) : null}
+
+                    <div className="mt-2 grid gap-2 md:max-w-xl">
+                      <FormField label="Repository name">
+                        <Input
+                          value={repositoryName}
+                          onChange={(event) => setRepositoryName(event.target.value)}
+                          placeholder="e.g. baseos-rpms"
+                        />
+                      </FormField>
+                      <div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleAddToRepository}
+                          disabled={!rpmResult.content || isAddingToRepository}
+                        >
+                          {isAddingToRepository ? "Adding to repository..." : "Add to Repository"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {repositoryResult ? (
+                      <div className="mt-2 space-y-1 rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
+                        <p className="break-all">
+                          <span className="font-medium">Repository:</span> {repositoryResult.repository ?? "-"}
+                        </p>
+                        <p className="break-all">
+                          <span className="font-medium">Content:</span> {repositoryResult.content ?? "-"}
+                        </p>
+                        <p className="break-all">
+                          <span className="font-medium">Task:</span> {repositoryResult.task ?? "-"}
+                        </p>
+                      </div>
                     ) : null}
                   </div>
                 ) : null}

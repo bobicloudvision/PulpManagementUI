@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulp Management UI
 
-## Getting Started
+Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups, distributions, RPM content, and file uploads against your Pulp API. Built with **Next.js** (App Router), **React 19**, **TypeScript**, and **Tailwind CSS**. Server routes proxy the Pulp REST API with cookie-based sessions.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Authentication** — Log in against Pulp; protected pages and API routes.
+- **Users** — List and create Pulp users (staff/active flags, profile fields).
+- **Groups** — List and create access groups.
+- **Distributions** — Browse publication endpoints (base path, base URL, linked repository).
+- **Content** — List RPM package content; open package detail (checksums, NVRA, artifact).
+- **Uploads** — List upload sessions; **chunked upload** for large files; optional **create RPM content** from an artifact; **add content to an RPM repository** by name.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Copy environment:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   cp .env.example .env
+   ```
 
-## Learn More
+   Set `PULP_BASE_URL` to your Pulp API v3 base (e.g. `https://your-host/pulp/api/v3`).
 
-To learn more about Next.js, take a look at the following resources:
+2. Install and run:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Open [http://localhost:3000](http://localhost:3000) (redirects to the users list after login).
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command        | Description        |
+| -------------- | ------------------ |
+| `npm run dev`  | Development server |
+| `npm run build` | Production build  |
+| `npm run start` | Start production  |
+| `npm run lint`  | ESLint             |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Discoverability
+
+**Suggested GitHub repository topics:** `pulp` `pulp3` `pulp-project` `repository-management` `rpm` `rpm-packages` `content-management` `artifact-upload` `chunked-upload` `nextjs` `next-js` `react` `typescript` `tailwindcss` `app-router` `api-proxy` `admin-ui` `devops` `linux-packages` `software-repository`
+
+**Keywords:** pulp, pulp 3, pulp3, repository manager, RPM repository, YUM/DNF content, artifact upload, chunked file upload, distribution, publication, user management, group management, Next.js admin, React dashboard, TypeScript UI, Tailwind, Pulp REST API v3, content gateway, package hosting.

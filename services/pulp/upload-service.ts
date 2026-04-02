@@ -1,5 +1,6 @@
 import { readApiDetail } from "./http";
 import {
+  PulpAddToRepositoryResult,
   PulpPaginatedResponse,
   PulpUploadAsRpmResult,
   PulpUploadCreateResult,
@@ -46,5 +47,22 @@ export const pulpUploadService = {
     }
 
     return (await response.json()) as PulpUploadAsRpmResult;
+  },
+
+  async addToRepository(
+    content: string,
+    repositoryName: string
+  ): Promise<PulpAddToRepositoryResult> {
+    const response = await fetch("/api/pulp/repositories/rpm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, repositoryName }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await readApiDetail(response));
+    }
+
+    return (await response.json()) as PulpAddToRepositoryResult;
   },
 };
