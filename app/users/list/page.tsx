@@ -8,6 +8,7 @@ import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
 import { useRequireAuth } from "@/components/pulp/use-require-auth";
 import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { CreatePulpUserPayload, UpdatePulpUserPayload } from "@/services/pulp/types";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckboxField, FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -197,7 +198,7 @@ export default function UsersListPage() {
                     <TableHeaderCell>Email</TableHeaderCell>
                     <TableHeaderCell>Staff</TableHeaderCell>
                     <TableHeaderCell>Active</TableHeaderCell>
-                      <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+                    <TableHeaderCell className="text-right">Actions</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -205,8 +206,16 @@ export default function UsersListPage() {
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.username}</TableCell>
                       <TableCell>{user.email || "-"}</TableCell>
-                      <TableCell>{String(user.is_staff)}</TableCell>
-                      <TableCell>{String(user.is_active)}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_staff ? "default" : "outline"}>
+                          {user.is_staff ? "Staff" : "Standard"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active ? "success" : "destructive"}>
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
