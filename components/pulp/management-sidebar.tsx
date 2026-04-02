@@ -137,7 +137,7 @@ export function ManagementSidebar({ usersCount, groupsCount }: ManagementSidebar
             />
           </span>
           <span className="truncate text-sm font-semibold tracking-tight transition-colors duration-200 group-hover/brand:text-zinc-700 dark:group-hover/brand:text-zinc-200">
-            Pulp Management UI
+            Pulp Admin UI
           </span>
         </Link>
 

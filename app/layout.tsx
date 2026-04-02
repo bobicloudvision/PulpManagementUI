@@ -14,7 +14,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pulp Management UI",
+  title: "Pulp Admin UI",
   description: "Manage Pulp users and groups",
 };
 
