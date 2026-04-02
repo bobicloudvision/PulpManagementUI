@@ -456,8 +456,11 @@ function RolesListPageContent() {
               New role
             </h2>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Pulp&apos;s roles API is in tech preview. Custom roles need a unique name and at least one
-              permission string (e.g. <span className="font-mono">core.view_task</span>).
+              Pulp&apos;s roles API is in tech preview. The role name must be unique. Each permission must
+              already exist on the server, as{" "}
+              <span className="font-mono">app_label.codename</span> (e.g.{" "}
+              <span className="font-mono">core.view_task</span>,{" "}
+              <span className="font-mono">container.view_containerrepository</span>).
             </p>
             <form className="mt-5 grid gap-4" onSubmit={handleCreateRole} noValidate>
               {modalError ? (

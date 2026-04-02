@@ -24,9 +24,12 @@ export type PulpGroup = {
   name: string;
 };
 
+/** Matches OpenAPI components/schemas/RoleResponse (openapi/pulp.json). */
 export type PulpRole = {
   pulp_href: string;
+  prn?: string;
   pulp_created: string;
+  pulp_last_updated?: string;
   name: string;
   description: string | null;
   permissions: string[];
