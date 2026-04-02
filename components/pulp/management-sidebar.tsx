@@ -17,6 +17,7 @@ type NavIconName =
   | "schedules"
   | "users"
   | "groups"
+  | "roles"
   | "content"
   | "upload"
   | "repos";
@@ -46,7 +47,10 @@ const navSections = [
   },
   {
     title: "Access",
-    items: [{ href: "/groups/list", label: "Groups", hint: "Manage team groups", icon: "groups" }] satisfies NavItem[],
+    items: [
+      { href: "/groups/list", label: "Groups", hint: "Manage team groups", icon: "groups" },
+      { href: "/roles/list", label: "Roles", hint: "RBAC roles and permissions", icon: "roles" },
+    ] satisfies NavItem[],
   },
   {
     title: "Repository",
@@ -160,6 +164,21 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <circle cx="16.5" cy="8.5" r="2.3" />
           <path d="M3.5 18c0-2.4 2-4.3 4.5-4.3S12.5 15.6 12.5 18" />
           <path d="M13.2 18c0-1.9 1.6-3.4 3.6-3.4S20.4 16.1 20.4 18" />
+        </svg>
+      );
+    case "roles":
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.65"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={iconClassName}
+        >
+          <path d="M12 3.5 6 6v5c0 3.2 2.2 6 6 6.5 3.8-.5 6-3.3 6-6.5V6l-6-2.5Z" />
+          <path d="M9.5 12.5v4.2a2.5 2.5 0 0 0 5 0v-4.2" />
         </svg>
       );
     case "content":

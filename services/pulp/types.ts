@@ -24,6 +24,33 @@ export type PulpGroup = {
   name: string;
 };
 
+export type PulpRole = {
+  pulp_href: string;
+  pulp_created: string;
+  name: string;
+  description: string | null;
+  permissions: string[];
+  locked: boolean;
+};
+
+export type CreatePulpRolePayload = {
+  name: string;
+  description?: string;
+  permissions: string[];
+};
+
+export type UpdatePulpRolePayload = {
+  name?: string;
+  description?: string | null;
+  permissions?: string[];
+};
+
+export type PutPulpRolePayload = {
+  name: string;
+  description?: string | null;
+  permissions: string[];
+};
+
 /** Worker name from Pulp may include HTML (e.g. mailto links). */
 export type PulpWorker = {
   pulp_href: string;
