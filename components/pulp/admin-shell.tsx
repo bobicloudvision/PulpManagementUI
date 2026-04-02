@@ -1,8 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { ReactNode } from "react";
+import packageJson from "../../package.json";
 import { ManagementSidebar } from "@/components/pulp/management-sidebar";
 import { Button } from "@/components/ui/button";
+
+const APP_VERSION = packageJson.version;
 
 type AdminShellProps = {
   title: string;
@@ -80,7 +84,31 @@ export function AdminShell({
             </section>
           ) : null}
 
-          {children}
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+
+          <footer
+            className="mt-auto border-t border-zinc-200/80 pt-6 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500"
+            aria-label="Application version and changelog"
+          >
+            <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+              <span className="tabular-nums">Pulp Admin UI · Version {APP_VERSION}</span>
+              <span aria-hidden className="text-zinc-300 dark:text-zinc-600">
+                ·
+              </span>
+              <Link
+                href="/changelog"
+                className="text-zinc-600 underline decoration-zinc-400/80 underline-offset-2 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:text-zinc-200"
+              >
+                Release notes
+              </Link>
+              <span aria-hidden className="text-zinc-300 dark:text-zinc-600">
+                ·
+              </span>
+              <span>
+                © {new Date().getFullYear()} B. Slaveykov
+              </span>
+            </p>
+          </footer>
         </section>
       </div>
     </main>
