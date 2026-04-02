@@ -22,6 +22,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { FormField } from "@/components/ui/form-field";
 import { pulpContentService } from "@/services/pulp/content-service";
+import {
+  pulpRepositoryManagementService,
+  type RepositoryPublishResult,
+} from "@/services/pulp/repository-management-service";
 import { pulpRpmRepositoryService } from "@/services/pulp/rpm-repository-service";
 import { pulpUploadService } from "@/services/pulp/upload-service";
 import {
@@ -71,6 +75,10 @@ export default function PackageDetailsPage() {
   const [addRepositoryResult, setAddRepositoryResult] = useState<PulpAddToRepositoryResult | null>(
     null
   );
+  const [isPublishingRepository, setIsPublishingRepository] = useState(false);
+  const [publishRepositoryResult, setPublishRepositoryResult] = useState<RepositoryPublishResult | null>(
+    null
+  );
 
   useEffect(() => {
     let active = true;
@@ -103,6 +111,7 @@ export default function PackageDetailsPage() {
   useEffect(() => {
     setSelectedRepositoryName("");
     setAddRepositoryResult(null);
+    setPublishRepositoryResult(null);
     setRepositories([]);
   }, [packageId]);
 
@@ -173,6 +182,7 @@ export default function PackageDetailsPage() {
     setError(null);
     setIsAddingToRepository(true);
     setAddRepositoryResult(null);
+    setPublishRepositoryResult(null);
 
     try {
       const added = await pulpUploadService.addToRepository(pkg.pulp_href, selectedRepositoryName);
@@ -181,6 +191,27 @@ export default function PackageDetailsPage() {
       setError(addError instanceof Error ? addError.message : "Failed to add package to repository.");
     } finally {
       setIsAddingToRepository(false);
+    }
+  }
+
+  async function handlePublishRepositoryChanges() {
+    const repoHref = addRepositoryResult?.repository?.trim();
+    if (!repoHref) {
+      setError("Add the package to a repository first, then publish.");
+      return;
+    }
+    setError(null);
+    setIsPublishingRepository(true);
+    setPublishRepositoryResult(null);
+    try {
+      const result = await pulpRepositoryManagementService.publishRpm(repoHref);
+      setPublishRepositoryResult(result);
+    } catch (publishError) {
+      setError(
+        publishError instanceof Error ? publishError.message : "Failed to publish repository."
+      );
+    } finally {
+      setIsPublishingRepository(false);
     }
   }
 
@@ -194,7 +225,13 @@ export default function PackageDetailsPage() {
       description={headerDescription}
       hasSession={hasSession}
       sessionUser={sessionUser}
-      isLoading={isLoading || isCreatingRpm || isLoadingRepositories || isAddingToRepository}
+      isLoading={
+        isLoading ||
+        isCreatingRpm ||
+        isLoadingRepositories ||
+        isAddingToRepository ||
+        isPublishingRepository
+      }
       usersCount={users.length}
       groupsCount={groups.length}
       error={error}
@@ -302,17 +339,51 @@ export default function PackageDetailsPage() {
                 </div>
               </form>
               {addRepositoryResult ? (
-                <div className="mt-3 space-y-1 rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-700">
-                  <p className="break-all">
-                    <span className="font-medium">Repository:</span>{" "}
-                    {addRepositoryResult.repository ?? "-"}
-                  </p>
-                  <p className="break-all">
-                    <span className="font-medium">Content:</span> {addRepositoryResult.content ?? "-"}
-                  </p>
-                  <p className="break-all">
-                    <span className="font-medium">Task:</span> {addRepositoryResult.task ?? "-"}
-                  </p>
+                <div className="mt-3 space-y-3 rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-700">
+                  <div className="space-y-1">
+                    <p className="break-all">
+                      <span className="font-medium">Repository:</span>{" "}
+                      {addRepositoryResult.repository ?? "-"}
+                    </p>
+                    <p className="break-all">
+                      <span className="font-medium">Content:</span>{" "}
+                      {addRepositoryResult.content ?? "-"}
+                    </p>
+                    <p className="break-all">
+                      <span className="font-medium">Task:</span> {addRepositoryResult.task ?? "-"}
+                    </p>
+                  </div>
+                  {addRepositoryResult.repository ? (
+                    <div className="flex flex-wrap gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isPublishingRepository}
+                        onClick={() => void handlePublishRepositoryChanges()}
+                      >
+                        {isPublishingRepository ? "Publishing…" : "Publish Repo Changes"}
+                      </Button>
+                    </div>
+                  ) : null}
+                  {publishRepositoryResult ? (
+                    <div className="space-y-1 rounded-md border border-emerald-200/80 bg-emerald-50/80 p-2 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/35 dark:text-emerald-100">
+                      <p className="font-medium">Repository publication started</p>
+                      {publishRepositoryResult.publication ? (
+                        <p className="break-all font-mono text-[11px] opacity-90">
+                          {publishRepositoryResult.publication}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] opacity-90">
+                          Publication href not returned (check Pulp tasks if needed).
+                        </p>
+                      )}
+                      {publishRepositoryResult.task ? (
+                        <p className="break-all font-mono text-[11px] opacity-80">
+                          Task: {publishRepositoryResult.task}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </CardContent>
