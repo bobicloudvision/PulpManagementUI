@@ -288,13 +288,6 @@ export function ManagementSidebar({ usersCount, groupsCount }: ManagementSidebar
           ))}
         </nav>
 
-        <div className="mt-auto border-t border-zinc-200/70 pt-4 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
-          <p>
-            <span className="tabular-nums text-zinc-700 dark:text-zinc-300">{usersCount}</span> users
-            <span className="mx-1.5 text-zinc-300 dark:text-zinc-600">·</span>
-            <span className="tabular-nums text-zinc-700 dark:text-zinc-300">{groupsCount}</span> groups
-          </p>
-        </div>
       </div>
     </aside>
   );
