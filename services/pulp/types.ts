@@ -24,6 +24,15 @@ export type PulpGroup = {
   name: string;
 };
 
+/** Worker name from Pulp may include HTML (e.g. mailto links). */
+export type PulpWorker = {
+  pulp_href: string;
+  pulp_created: string;
+  name: string;
+  last_heartbeat: string;
+  current_task: string | null;
+};
+
 export type PulpDistribution = {
   pulp_href: string;
   pulp_created: string;

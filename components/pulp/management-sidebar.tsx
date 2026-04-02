@@ -12,6 +12,7 @@ type ManagementSidebarProps = {
 
 type NavIconName =
   | "dashboard"
+  | "workers"
   | "users"
   | "groups"
   | "content"
@@ -34,6 +35,12 @@ const navSections = [
         label: "Dashboard",
         hint: "Overview and quick links",
         icon: "dashboard",
+      },
+      {
+        href: "/workers/list",
+        label: "Workers",
+        hint: "Task workers and heartbeats",
+        icon: "workers",
       },
     ] satisfies NavItem[],
   },
@@ -66,6 +73,22 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <rect x="13" y="3.5" width="7.5" height="7.5" rx="1.5" />
           <rect x="3.5" y="13" width="7.5" height="7.5" rx="1.5" />
           <rect x="13" y="13" width="7.5" height="7.5" rx="1.5" />
+        </svg>
+      );
+    case "workers":
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.65"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={iconClassName}
+        >
+          <rect x="7.25" y="7.25" width="9.5" height="9.5" rx="1.75" />
+          <rect x="9.75" y="9.75" width="4.5" height="4.5" rx="0.85" />
+          <path d="M12 4.75v2.25M12 16.75v2.5M4.75 12h2.25M16.75 12h2.5" />
         </svg>
       );
     case "users":
