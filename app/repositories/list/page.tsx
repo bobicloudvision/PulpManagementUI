@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  CircleHelp,
   GitBranch,
   MoreVertical,
   Package,
@@ -118,6 +119,7 @@ export default function RepositoriesListPage() {
   const [createDescription, setCreateDescription] = useState("");
   const [createRemote, setCreateRemote] = useState("");
   const [createAutopublish, setCreateAutopublish] = useState(false);
+  const [createNamingHintOpen, setCreateNamingHintOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createResult, setCreateResult] = useState<RepositoryCreateResult | null>(null);
 
@@ -172,6 +174,7 @@ export default function RepositoriesListPage() {
     setCreateKind(kind);
     setCreateName("");
     resetCreateRepositoryFields();
+    setCreateNamingHintOpen(false);
     setCreateResult(null);
     setError(null);
     setCreateModalOpen(true);
@@ -628,17 +631,36 @@ export default function RepositoriesListPage() {
               New RPM or Debian APT repository in Pulp.
             </p>
 
-            <div className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/60 p-3 text-sm text-zinc-700 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-zinc-300">
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">How to name the repository</p>
-              <p className="mt-2">
-                Use a path-style name: product or stream, distro family, major version, then
-                architecture (matches how you organize RHEL-style trees).
-              </p>
-              <p className="mb-1.5 mt-3 font-medium text-zinc-900 dark:text-zinc-100">Examples</p>
-              <ul className="space-y-1 rounded-md border border-amber-200/60 bg-white/80 px-3 py-2 font-mono text-xs text-zinc-800 dark:border-amber-900/50 dark:bg-zinc-950/40 dark:text-zinc-200 sm:text-sm">
-                <li>yourpulp-devel/rhel/10/noarch</li>
-                <li>yourpulp-devel/rhel/10/x86_64</li>
-              </ul>
+            <div className="mt-4">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-amber-900 underline decoration-amber-400/70 underline-offset-2 hover:decoration-amber-600 disabled:opacity-50 dark:text-amber-200 dark:decoration-amber-600/60 dark:hover:decoration-amber-400"
+                aria-expanded={createNamingHintOpen}
+                aria-controls={`${createDialogTitleId}-naming-hint`}
+                disabled={isCreating}
+                onClick={() => setCreateNamingHintOpen((open) => !open)}
+              >
+                <CircleHelp className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+                How to name the repository
+              </button>
+              <div
+                id={`${createDialogTitleId}-naming-hint`}
+                role="region"
+                aria-label="Repository naming guidance"
+                hidden={!createNamingHintOpen}
+                className="mt-3 rounded-lg border border-amber-200/80 bg-amber-50/60 p-3 text-sm text-zinc-700 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-zinc-300"
+              >
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">How to name the repository</p>
+                <p className="mt-2">
+                  Use a path-style name: product or stream, distro family, major version, then architecture
+                  (matches how you organize RHEL-style trees).
+                </p>
+                <p className="mb-1.5 mt-3 font-medium text-zinc-900 dark:text-zinc-100">Examples</p>
+                <ul className="space-y-1 rounded-md border border-amber-200/60 bg-white/80 px-3 py-2 font-mono text-xs text-zinc-800 dark:border-amber-900/50 dark:bg-zinc-950/40 dark:text-zinc-200 sm:text-sm">
+                  <li>yourpulp-devel/rhel/10/noarch</li>
+                  <li>yourpulp-devel/rhel/10/x86_64</li>
+                </ul>
+              </div>
             </div>
 
             <form className="mt-4 flex flex-col gap-4" onSubmit={(e) => void handleCreateSubmit(e)}>
