@@ -35,25 +35,9 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 - **Sidebar** — Grouped navigation (**Overview**, **Identity**, **Access**, **Repository**): Dashboard, Users, Groups, Repositories, Content, Upload file. Nav tiles with hover/active states and **reduced-motion** support; footer shows **live user and group counts**.
 - **Administration layout** — Consistent shell with titles and session; **errors** render under the header so API or publish failures stay visible without scrolling past the main card.
 
-## Screenshots
-
-Assets live in [`screenshots/`](screenshots/).
-
-### Dashboard
+## Screenshot
 
 ![Dashboard with summary counts, cache notice, shortcuts, and session](screenshots/screenshot4.png)
-
-### RPM repositories list
-
-![Repositories list with RPM/DEB toggle, actions, and session](screenshots/screenshot1.png)
-
-### Distributions (in repositories view)
-
-![Published distributions, base path and base URL](screenshots/screenshot2.png)
-
-### Content list
-
-![RPM content list with pagination](screenshots/screenshot3.png)
 
 ## Getting started
 
