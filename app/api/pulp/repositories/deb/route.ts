@@ -9,16 +9,16 @@ import {
   waitForTask,
 } from "../_server";
 
-type PulpRpmRepositoryRow = {
+type PulpDebRepositoryRow = {
   name: string;
   pulp_href: string;
 };
 
-type PulpRpmRepositoryListResponse = {
+type PulpDebRepositoryListResponse = {
   count: number;
   next: string | null;
   previous: string | null;
-  results: PulpRpmRepositoryRow[];
+  results: PulpDebRepositoryRow[];
 };
 
 type DeleteBody = {
@@ -35,8 +35,8 @@ export async function GET(request: Request) {
   const limit = url.searchParams.get("limit") ?? "200";
   const offset = url.searchParams.get("offset") ?? "0";
 
-  const result = await pulpFetch<PulpRpmRepositoryListResponse>(
-    `/repositories/rpm/rpm/?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`,
+  const result = await pulpFetch<PulpDebRepositoryListResponse>(
+    `/repositories/deb/apt/?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`,
     authResult.auth
   );
 
@@ -72,16 +72,14 @@ export async function DELETE(request: Request) {
     cache: "no-store",
   });
 
-  if (deleteResponse.status === 204) {
-    return Response.json({ ok: true });
-  }
-
-  if (deleteResponse.status === 202) {
-    const ct = deleteResponse.headers.get("content-type") ?? "";
-    if (ct.includes("application/json")) {
-      const payload = (await deleteResponse.json()) as TaskRefResponse;
-      if (payload.task) {
-        await waitForTask(payload.task, authHeader);
+  if (deleteResponse.status === 204 || deleteResponse.status === 202) {
+    if (deleteResponse.status === 202) {
+      const ct = deleteResponse.headers.get("content-type") ?? "";
+      if (ct.includes("application/json")) {
+        const payload = (await deleteResponse.json()) as TaskRefResponse;
+        if (payload.task) {
+          await waitForTask(payload.task, authHeader);
+        }
       }
     }
     return Response.json({ ok: true });

@@ -53,7 +53,7 @@ export const pulpUploadService = {
     content: string,
     repositoryName: string
   ): Promise<PulpAddToRepositoryResult> {
-    const response = await fetch("/api/pulp/repositories/rpm", {
+    const response = await fetch("/api/pulp/repositories/rpm/add-content", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content, repositoryName }),

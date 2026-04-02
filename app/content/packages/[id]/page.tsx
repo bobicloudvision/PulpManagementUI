@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
@@ -19,9 +19,17 @@ import {
   TableWrapper,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/components/ui/cn";
+import { FormField } from "@/components/ui/form-field";
 import { pulpContentService } from "@/services/pulp/content-service";
+import { pulpRpmRepositoryService } from "@/services/pulp/rpm-repository-service";
 import { pulpUploadService } from "@/services/pulp/upload-service";
-import { PulpRpmPackage, PulpUploadAsRpmResult } from "@/services/pulp/types";
+import {
+  PulpAddToRepositoryResult,
+  PulpRpmPackage,
+  PulpRpmRepository,
+  PulpUploadAsRpmResult,
+} from "@/services/pulp/types";
 
 function valueOf(value: unknown): string {
   if (value === null || value === undefined) return "-";
@@ -56,6 +64,13 @@ export default function PackageDetailsPage() {
   const [pkg, setPkg] = useState<PulpRpmPackage | null>(null);
   const [isCreatingRpm, setIsCreatingRpm] = useState(false);
   const [rpmResult, setRpmResult] = useState<PulpUploadAsRpmResult | null>(null);
+  const [repositories, setRepositories] = useState<PulpRpmRepository[]>([]);
+  const [selectedRepositoryName, setSelectedRepositoryName] = useState("");
+  const [isLoadingRepositories, setIsLoadingRepositories] = useState(false);
+  const [isAddingToRepository, setIsAddingToRepository] = useState(false);
+  const [addRepositoryResult, setAddRepositoryResult] = useState<PulpAddToRepositoryResult | null>(
+    null
+  );
 
   useEffect(() => {
     let active = true;
@@ -85,6 +100,44 @@ export default function PackageDetailsPage() {
     };
   }, [hasSession, packageId, setError]);
 
+  useEffect(() => {
+    setSelectedRepositoryName("");
+    setAddRepositoryResult(null);
+    setRepositories([]);
+  }, [packageId]);
+
+  useEffect(() => {
+    if (!hasSession || !pkg) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadRepositories() {
+      setIsLoadingRepositories(true);
+      try {
+        const page = await pulpRpmRepositoryService.list();
+        if (!active) return;
+        const sorted = [...page.results].sort((a, b) => a.name.localeCompare(b.name));
+        setRepositories(sorted);
+      } catch (repoError) {
+        if (active) {
+          setError(repoError instanceof Error ? repoError.message : "Failed to load repositories.");
+        }
+      } finally {
+        if (active) {
+          setIsLoadingRepositories(false);
+        }
+      }
+    }
+
+    void loadRepositories();
+
+    return () => {
+      active = false;
+    };
+  }, [hasSession, pkg, setError]);
+
   const artifactForApi = pkg ? normalizeUrl(pkg.artifact) ?? (typeof pkg.artifact === "string" ? pkg.artifact : null) : null;
 
   async function handleUploadAsRpm() {
@@ -106,13 +159,42 @@ export default function PackageDetailsPage() {
     }
   }
 
+  async function handleAddToRepository(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pkg?.pulp_href) {
+      setError("Missing package content href.");
+      return;
+    }
+    if (!selectedRepositoryName) {
+      setError("Select a repository.");
+      return;
+    }
+
+    setError(null);
+    setIsAddingToRepository(true);
+    setAddRepositoryResult(null);
+
+    try {
+      const added = await pulpUploadService.addToRepository(pkg.pulp_href, selectedRepositoryName);
+      setAddRepositoryResult(added);
+    } catch (addError) {
+      setError(addError instanceof Error ? addError.message : "Failed to add package to repository.");
+    } finally {
+      setIsAddingToRepository(false);
+    }
+  }
+
+  const headerDescription = pkg
+    ? `RPM package review: ${pkg.name} (${pkg.version}-${pkg.release}, ${pkg.arch}).`
+    : "RPM package review — inspect metadata, dependencies, files, and checksums for this content unit.";
+
   return (
     <AdminShell
-      title="Package Instance"
-      description="View details for an RPM package content instance."
+      title="RPM package review"
+      description={headerDescription}
       hasSession={hasSession}
       sessionUser={sessionUser}
-      isLoading={isLoading || isCreatingRpm}
+      isLoading={isLoading || isCreatingRpm || isLoadingRepositories || isAddingToRepository}
       usersCount={users.length}
       groupsCount={groups.length}
       error={error}
@@ -166,12 +248,70 @@ export default function PackageDetailsPage() {
                 ) : null}
               </div>
               {rpmResult ? (
-                <div className="space-y-1 rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-700">
+                <div className="space-y-2 rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-700">
                   <p className="break-all">
                     <span className="font-medium">RPM Content:</span> {rpmResult.content ?? "-"}
                   </p>
                   <p className="break-all">
                     <span className="font-medium">Task:</span> {rpmResult.task ?? "-"}
+                  </p>
+                  {rpmResult.content ? (
+                    <Link
+                      href={`/content/preview?href=${encodeURIComponent(rpmResult.content)}`}
+                      className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                    >
+                      Preview package
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardTitle className="mb-2">Add to repository</CardTitle>
+            <CardContent>
+              <form className="flex max-w-xl flex-col gap-3" onSubmit={handleAddToRepository}>
+                <FormField label="RPM repository">
+                  <select
+                    className={cn(
+                      "w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700"
+                    )}
+                    value={selectedRepositoryName}
+                    onChange={(event) => setSelectedRepositoryName(event.target.value)}
+                    disabled={isLoadingRepositories || repositories.length === 0}
+                  >
+                    <option value="">
+                      {isLoadingRepositories
+                        ? "Loading repositories…"
+                        : repositories.length === 0
+                          ? "No repositories found"
+                          : "Select a repository"}
+                    </option>
+                    {repositories.map((repo) => (
+                      <option key={repo.pulp_href} value={repo.name}>
+                        {repo.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <div>
+                  <Button type="submit" disabled={!selectedRepositoryName || isAddingToRepository}>
+                    {isAddingToRepository ? "Adding…" : "Add to repository"}
+                  </Button>
+                </div>
+              </form>
+              {addRepositoryResult ? (
+                <div className="mt-3 space-y-1 rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-700">
+                  <p className="break-all">
+                    <span className="font-medium">Repository:</span>{" "}
+                    {addRepositoryResult.repository ?? "-"}
+                  </p>
+                  <p className="break-all">
+                    <span className="font-medium">Content:</span> {addRepositoryResult.content ?? "-"}
+                  </p>
+                  <p className="break-all">
+                    <span className="font-medium">Task:</span> {addRepositoryResult.task ?? "-"}
                   </p>
                 </div>
               ) : null}

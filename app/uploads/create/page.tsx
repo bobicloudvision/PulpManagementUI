@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { extractRpmPackageContentId } from "@/lib/extract-rpm-package-content-id";
 import { pulpUploadService } from "@/services/pulp/upload-service";
 import {
   PulpAddToRepositoryResult,
@@ -42,11 +43,6 @@ export default function UploadsCreatePage() {
   const [rpmResult, setRpmResult] = useState<PulpUploadAsRpmResult | null>(null);
   const [repositoryName, setRepositoryName] = useState("");
   const [repositoryResult, setRepositoryResult] = useState<PulpAddToRepositoryResult | null>(null);
-
-  function extractRpmPackageId(contentHref: string): string | null {
-    const match = contentHref.match(/\/content\/rpm\/packages\/([^/]+)\/?$/);
-    return match?.[1] ?? null;
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -199,12 +195,12 @@ export default function UploadsCreatePage() {
                     <p className="break-all">
                       <span className="font-medium">Task:</span> {rpmResult.task ?? "-"}
                     </p>
-                    {rpmResult.content && extractRpmPackageId(rpmResult.content) ? (
+                    {rpmResult.content ? (
                       <Link
-                        href={`/content/packages/${extractRpmPackageId(rpmResult.content)}`}
+                        href={`/content/preview?href=${encodeURIComponent(rpmResult.content)}`}
                         className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
                       >
-                        Open package details
+                        Preview package
                       </Link>
                     ) : null}
 

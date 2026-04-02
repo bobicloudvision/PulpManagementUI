@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AdminShell } from "@/components/pulp/admin-shell";
+import { extractRpmPackageContentId } from "@/lib/extract-rpm-package-content-id";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpContent } from "@/components/pulp/use-pulp-content";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
@@ -36,11 +37,6 @@ export default function ContentListPage() {
     goPrevious,
   } = usePulpContent(hasSession, 50);
 
-  function extractRpmPackageId(pulpHref: string): string | null {
-    const match = pulpHref.match(/\/content\/rpm\/packages\/([^/]+)\/?$/);
-    return match?.[1] ?? null;
-  }
-
   return (
     <AdminShell
       title="Content List"
@@ -73,7 +69,7 @@ export default function ContentListPage() {
                 </TableHead>
                 <TableBody>
                   {contentItems.map((item) => {
-                    const rpmPackageId = extractRpmPackageId(item.pulp_href);
+                    const rpmPackageId = extractRpmPackageContentId(item.pulp_href);
                     return (
                       <TableRow key={item.pulp_href}>
                         <TableCell className="font-mono text-xs">{item.pulp_href}</TableCell>
