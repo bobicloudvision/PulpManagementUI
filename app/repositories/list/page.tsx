@@ -211,6 +211,14 @@ export default function RepositoriesListPage() {
                           >
                             Edit
                           </Link>
+                          {kind === "rpm" ? (
+                            <Link
+                              href={`/repositories/versions?pulp_href=${encodeURIComponent(repo.pulp_href)}`}
+                              className="inline-flex rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                            >
+                              Versions
+                            </Link>
+                          ) : null}
                           <Link
                             href={`/repositories/content?pulp_href=${encodeURIComponent(repo.pulp_href)}`}
                             className="inline-flex rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"

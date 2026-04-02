@@ -128,6 +128,33 @@ export type DebRepositoryUpdatePayload = {
   structured_repo: boolean;
 };
 
+/** Per-type counts in repository version content_summary (e.g. rpm.package). */
+export type PulpRpmRepositoryVersionContentKind = {
+  count: number;
+  href: string;
+};
+
+export type PulpRpmRepositoryVersionContentSummary = {
+  added: Record<string, PulpRpmRepositoryVersionContentKind>;
+  removed: Record<string, PulpRpmRepositoryVersionContentKind>;
+  present: Record<string, PulpRpmRepositoryVersionContentKind>;
+};
+
+/** Row from GET .../repositories/rpm/rpm/{uuid}/versions/ */
+export type PulpRpmRepositoryVersion = {
+  pulp_href: string;
+  pulp_created: string;
+  number: number;
+  repository: string;
+  base_version: string | null;
+  content_summary: PulpRpmRepositoryVersionContentSummary;
+};
+
+export type RpmRepositoryVersionsListResult = {
+  count: number;
+  results: PulpRpmRepositoryVersion[];
+};
+
 export type PulpRpmPackage = {
   pulp_href: string;
   pulp_created: string;

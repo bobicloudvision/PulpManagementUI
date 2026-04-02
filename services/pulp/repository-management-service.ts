@@ -5,6 +5,8 @@ import {
   PulpRepositoryDetail,
   PulpRpmRepository,
   RpmRepositoryUpdatePayload,
+  PulpRpmRepositoryVersion,
+  RpmRepositoryVersionsListResult,
 } from "./types";
 
 export type RepositoryPublishResult = {
@@ -134,5 +136,30 @@ export const pulpRepositoryManagementService = {
     );
     if (!response.ok) throw new Error(await readApiDetail(response));
     return (await response.json()) as RepositoryContentListResult;
+  },
+
+  async listRpmRepositoryVersions(pulpHref: string): Promise<RpmRepositoryVersionsListResult> {
+    const response = await fetch(
+      `/api/pulp/repositories/rpm/versions?pulp_href=${encodeURIComponent(pulpHref)}`
+    );
+    if (!response.ok) throw new Error(await readApiDetail(response));
+    return (await response.json()) as RpmRepositoryVersionsListResult;
+  },
+
+  async getRpmRepositoryVersion(versionPulpHref: string): Promise<PulpRpmRepositoryVersion> {
+    const response = await fetch(
+      `/api/pulp/repositories/rpm/version?pulp_href=${encodeURIComponent(versionPulpHref)}`
+    );
+    if (!response.ok) throw new Error(await readApiDetail(response));
+    return (await response.json()) as PulpRpmRepositoryVersion;
+  },
+
+  async deleteRpmRepositoryVersion(versionPulpHref: string): Promise<void> {
+    const response = await fetch("/api/pulp/repositories/rpm/version", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pulp_href: versionPulpHref }),
+    });
+    if (!response.ok) throw new Error(await readApiDetail(response));
   },
 };

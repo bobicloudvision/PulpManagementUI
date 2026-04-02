@@ -260,26 +260,38 @@ function RepositoriesEditInner() {
                 {rpmMeta?.pulp_href ?? pulpHref}
               </p>
               {rpmMeta ? (
-                <dl className="grid gap-2 border-t border-zinc-200 pt-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
-                  {rpmMeta.pulp_created ? (
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-medium text-zinc-700 dark:text-zinc-300">Created</dt>
-                      <dd>{rpmMeta.pulp_created}</dd>
+                <>
+                  <dl className="grid gap-2 border-t border-zinc-200 pt-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                    {rpmMeta.pulp_created ? (
+                      <div className="flex flex-wrap gap-x-2">
+                        <dt className="font-medium text-zinc-700 dark:text-zinc-300">Created</dt>
+                        <dd>{rpmMeta.pulp_created}</dd>
+                      </div>
+                    ) : null}
+                    {rpmMeta.latest_version_href ? (
+                      <div className="flex flex-col gap-0.5">
+                        <dt className="font-medium text-zinc-700 dark:text-zinc-300">Latest version</dt>
+                        <dd className="break-all font-mono">{rpmMeta.latest_version_href}</dd>
+                      </div>
+                    ) : null}
+                    {rpmMeta.versions_href ? (
+                      <div className="flex flex-col gap-0.5">
+                        <dt className="font-medium text-zinc-700 dark:text-zinc-300">Versions list</dt>
+                        <dd className="break-all font-mono">{rpmMeta.versions_href}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  {loadedKind === "rpm" && pulpHref ? (
+                    <div className="pt-2">
+                      <Link
+                        href={`/repositories/versions?pulp_href=${encodeURIComponent(pulpHref)}`}
+                        className="inline-flex rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                      >
+                        Version history
+                      </Link>
                     </div>
                   ) : null}
-                  {rpmMeta.latest_version_href ? (
-                    <div className="flex flex-col gap-0.5">
-                      <dt className="font-medium text-zinc-700 dark:text-zinc-300">Latest version</dt>
-                      <dd className="break-all font-mono">{rpmMeta.latest_version_href}</dd>
-                    </div>
-                  ) : null}
-                  {rpmMeta.versions_href ? (
-                    <div className="flex flex-col gap-0.5">
-                      <dt className="font-medium text-zinc-700 dark:text-zinc-300">Versions</dt>
-                      <dd className="break-all font-mono">{rpmMeta.versions_href}</dd>
-                    </div>
-                  ) : null}
-                </dl>
+                </>
               ) : null}
 
               {isLoadingDetail ? (
