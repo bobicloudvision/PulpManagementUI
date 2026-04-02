@@ -33,6 +33,43 @@ export type PulpWorker = {
   current_task: string | null;
 };
 
+export type PulpTaskProgressReport = {
+  message: string;
+  code: string;
+  state: string;
+  total: number;
+  done: number;
+  suffix: string | null;
+};
+
+export type PulpTask = {
+  pulp_href: string;
+  pulp_created: string;
+  state: string;
+  name: string;
+  logging_cid: string;
+  started_at: string | null;
+  finished_at: string | null;
+  error: unknown;
+  worker: string | null;
+  parent_task: string | null;
+  child_tasks: string[];
+  task_group: string | null;
+  progress_reports: PulpTaskProgressReport[];
+  created_resources: string[];
+  reserved_resources_record: string[];
+};
+
+export type PulpTaskSchedule = {
+  pulp_href: string;
+  pulp_created: string;
+  name: string;
+  task_name: string;
+  dispatch_interval: string;
+  next_dispatch: string | null;
+  last_task: string | null;
+};
+
 export type PulpDistribution = {
   pulp_href: string;
   pulp_created: string;

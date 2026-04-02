@@ -13,6 +13,8 @@ type ManagementSidebarProps = {
 type NavIconName =
   | "dashboard"
   | "workers"
+  | "tasks"
+  | "schedules"
   | "users"
   | "groups"
   | "content"
@@ -41,6 +43,18 @@ const navSections = [
         label: "Workers",
         hint: "Task workers and heartbeats",
         icon: "workers",
+      },
+      {
+        href: "/tasks/list",
+        label: "Tasks",
+        hint: "Async task history and status",
+        icon: "tasks",
+      },
+      {
+        href: "/task-schedules/list",
+        label: "Task schedules",
+        hint: "Periodic dispatch and Celery beat schedules",
+        icon: "schedules",
       },
     ] satisfies NavItem[],
   },
@@ -89,6 +103,40 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <rect x="7.25" y="7.25" width="9.5" height="9.5" rx="1.75" />
           <rect x="9.75" y="9.75" width="4.5" height="4.5" rx="0.85" />
           <path d="M12 4.75v2.25M12 16.75v2.5M4.75 12h2.25M16.75 12h2.5" />
+        </svg>
+      );
+    case "tasks":
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.65"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={iconClassName}
+        >
+          <path d="M9 11l2 2 4-4" />
+          <rect x="4" y="4" width="16" height="16" rx="2.5" />
+          <path d="M8 16h.01M12 16h4" />
+        </svg>
+      );
+    case "schedules":
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.65"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={iconClassName}
+        >
+          <rect x="4" y="5" width="16" height="15" rx="2.5" />
+          <path d="M4 9.5h16" />
+          <path d="M9 3.5v3M15 3.5v3" />
+          <circle cx="12" cy="14.5" r="3.25" />
+          <path d="M12 12.25v2.25l1.25 1.25" />
         </svg>
       );
     case "users":
