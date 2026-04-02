@@ -13,7 +13,6 @@ type ManagementSidebarProps = {
 type NavIconName =
   | "users"
   | "groups"
-  | "distribution"
   | "content"
   | "upload"
   | "repos";
@@ -33,17 +32,6 @@ const navSections = [
   {
     title: "Access",
     items: [{ href: "/groups/list", label: "Groups", hint: "Manage team groups", icon: "groups" }] satisfies NavItem[],
-  },
-  {
-    title: "Delivery",
-    items: [
-      {
-        href: "/distributions/list",
-        label: "Distributions",
-        hint: "Publish endpoints",
-        icon: "distribution",
-      },
-    ] satisfies NavItem[],
   },
   {
     title: "Repository",
@@ -77,15 +65,6 @@ function SidebarIcon({ name }: { name: NavIconName }) {
           <circle cx="16.5" cy="8.5" r="2.3" />
           <path d="M3.5 18c0-2.4 2-4.3 4.5-4.3S12.5 15.6 12.5 18" />
           <path d="M13.2 18c0-1.9 1.6-3.4 3.6-3.4S20.4 16.1 20.4 18" />
-        </svg>
-      );
-    case "distribution":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" className={iconClassName}>
-          <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
-          <path d="m12 12 8-4.5" />
-          <path d="m12 12-8-4.5" />
-          <path d="M12 21v-9" />
         </svg>
       );
     case "content":
