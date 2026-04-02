@@ -1,10 +1,45 @@
 import { getPulpApiUrl, getPulpBaseUrl } from "@/lib/pulp";
 
+export type CreatedResourceEntry = string | { pulp_href?: string; href?: string };
+
 export type TaskResponse = {
   state?: string;
   error?: unknown;
-  created_resources?: string[];
+  created_resources?: CreatedResourceEntry[];
+  pulp_href?: string;
+  href?: string;
 };
+
+function hrefFromCreatedResource(entry: CreatedResourceEntry | undefined): string | null {
+  if (entry == null) return null;
+  if (typeof entry === "string") return entry;
+  const h = entry.pulp_href ?? entry.href;
+  return typeof h === "string" ? h : null;
+}
+
+/** Pulp may return created_resources as strings or nested objects; publication may not be index 0. */
+export function resolvePublicationHrefAfterTask(task: TaskResponse, fallback: string | null): string | null {
+  const resources = task.created_resources;
+  if (resources?.length) {
+    for (const r of resources) {
+      const h = hrefFromCreatedResource(r);
+      if (h && h.includes("/publications/")) {
+        return h;
+      }
+    }
+    const first = hrefFromCreatedResource(resources[0]);
+    if (first) {
+      return first;
+    }
+  }
+  if (typeof task.pulp_href === "string" && task.pulp_href.includes("/publications/")) {
+    return task.pulp_href;
+  }
+  if (typeof task.href === "string" && task.href.includes("/publications/")) {
+    return task.href;
+  }
+  return fallback;
+}
 
 export type TaskRefResponse = {
   task?: string;

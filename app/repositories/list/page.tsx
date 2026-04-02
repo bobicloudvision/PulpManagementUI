@@ -36,6 +36,11 @@ export default function RepositoriesListPage() {
   const [count, setCount] = useState(0);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
   const [busyHref, setBusyHref] = useState<string | null>(null);
+  const [publishResult, setPublishResult] = useState<{
+    repoName: string;
+    publication: string | null;
+    task: string | null;
+  } | null>(null);
 
   const load = useCallback(async () => {
     if (!hasSession) return;
@@ -64,12 +69,17 @@ export default function RepositoriesListPage() {
   async function handlePublish(repo: PulpRpmRepository) {
     setBusyHref(repo.pulp_href);
     setError(null);
+    setPublishResult(null);
     try {
-      if (kind === "rpm") {
-        await pulpRepositoryManagementService.publishRpm(repo.pulp_href);
-      } else {
-        await pulpRepositoryManagementService.publishDeb(repo.pulp_href);
-      }
+      const result =
+        kind === "rpm"
+          ? await pulpRepositoryManagementService.publishRpm(repo.pulp_href)
+          : await pulpRepositoryManagementService.publishDeb(repo.pulp_href);
+      setPublishResult({
+        repoName: repo.name,
+        publication: result.publication,
+        task: result.task,
+      });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Publish failed.");
@@ -121,7 +131,10 @@ export default function RepositoriesListPage() {
                 <button
                   key={k}
                   type="button"
-                  onClick={() => setKind(k)}
+                  onClick={() => {
+                    setPublishResult(null);
+                    setKind(k);
+                  }}
                   className={cn(
                     "rounded-md border px-3 py-1.5 text-sm",
                     kind === k
@@ -132,7 +145,15 @@ export default function RepositoriesListPage() {
                   {k.toUpperCase()}
                 </button>
               ))}
-              <Button type="button" variant="outline" onClick={() => void load()} disabled={isLoadingRepos}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPublishResult(null);
+                  void load();
+                }}
+                disabled={isLoadingRepos}
+              >
                 Refresh
               </Button>
               <Link
@@ -142,6 +163,31 @@ export default function RepositoriesListPage() {
                 Create repository
               </Link>
             </div>
+
+            {publishResult ? (
+              <div className="rounded-lg border border-emerald-300/80 bg-emerald-50/90 p-4 text-sm dark:border-emerald-800 dark:bg-emerald-950/35">
+                <p className="font-medium text-emerald-900 dark:text-emerald-100">
+                  Published “{publishResult.repoName}” ({kind.toUpperCase()})
+                </p>
+                {publishResult.publication ? (
+                  <p className="mt-2 break-all font-mono text-xs text-emerald-800 dark:text-emerald-200/90">
+                    <span className="font-sans font-medium text-emerald-900 dark:text-emerald-100">
+                      Publication:{" "}
+                    </span>
+                    {publishResult.publication}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-emerald-800/90 dark:text-emerald-200/80">
+                    Publication href was not returned by Pulp (task may still have succeeded).
+                  </p>
+                )}
+                {publishResult.task ? (
+                  <p className="mt-1 break-all font-mono text-xs text-emerald-800/80 dark:text-emerald-300/70">
+                    Task: {publishResult.task}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <TableWrapper>
               <Table>

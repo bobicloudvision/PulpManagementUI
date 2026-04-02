@@ -5,6 +5,7 @@ import {
   authHeaders,
   normalizePulpHrefToApiPath,
   readDetail,
+  resolvePublicationHrefAfterTask,
   TaskRefResponse,
   toPulpHrefPath,
   waitForTask,
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
   try {
     if (published.task) {
       const task = await waitForTask(published.task, authHeader);
-      publicationHref = task.created_resources?.[0] ?? publicationHref;
+      publicationHref = resolvePublicationHrefAfterTask(task, publicationHref);
     }
   } catch (error) {
     return Response.json(

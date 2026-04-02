@@ -74,13 +74,13 @@ export function AdminShell({
             </div>
           </header>
 
-          {children}
-
           {error ? (
-            <section className="rounded-lg border border-red-400 bg-red-50 p-3 text-sm text-red-700 dark:border-red-600 dark:bg-red-950/40 dark:text-red-300">
+            <section className="mb-6 rounded-lg border border-red-400 bg-red-50 p-3 text-sm text-red-700 dark:border-red-600 dark:bg-red-950/40 dark:text-red-300">
               {error}
             </section>
           ) : null}
+
+          {children}
         </section>
       </div>
     </main>
