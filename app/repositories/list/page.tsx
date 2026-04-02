@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
 import { usePulpGroups } from "@/components/pulp/use-pulp-groups";
@@ -10,6 +11,8 @@ import { usePulpUsers } from "@/components/pulp/use-pulp-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +39,10 @@ import {
   TableWrapper,
 } from "@/components/ui/table";
 import { pulpDistributionService } from "@/services/pulp/distribution-service";
-import { pulpRepositoryManagementService } from "@/services/pulp/repository-management-service";
+import {
+  pulpRepositoryManagementService,
+  type RepositoryCreateResult,
+} from "@/services/pulp/repository-management-service";
 import { PulpDistribution, PulpRpmRepository } from "@/services/pulp/types";
 
 function distributionUrlByRepositoryHref(distributions: PulpDistribution[]): Record<string, string> {
@@ -64,6 +70,9 @@ type RepoKind = "rpm" | "deb";
 
 export default function RepositoriesListPage() {
   const deleteDialogTitleId = useId();
+  const createDialogTitleId = useId();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { sessionUser, isLoading, isCheckingSession, hasSession, error, setError, logout } =
     usePulpAuthContext();
@@ -94,6 +103,12 @@ export default function RepositoriesListPage() {
     base_path: string;
     task: string | null;
   } | null>(null);
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createKind, setCreateKind] = useState<RepoKind>("rpm");
+  const [createName, setCreateName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [createResult, setCreateResult] = useState<RepositoryCreateResult | null>(null);
 
   const load = useCallback(async () => {
     if (!hasSession) return;
@@ -128,6 +143,70 @@ export default function RepositoriesListPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (searchParams.get("create") !== "1") return;
+    setCreateKind(kind);
+    setCreateModalOpen(true);
+    router.replace("/repositories/list", { scroll: false });
+  }, [searchParams, router, kind]);
+
+  function openCreateModal() {
+    setCreateKind(kind);
+    setCreateName("");
+    setCreateResult(null);
+    setError(null);
+    setCreateModalOpen(true);
+  }
+
+  function closeCreateModal() {
+    if (isCreating) return;
+    setCreateModalOpen(false);
+  }
+
+  useEffect(() => {
+    if (!createModalOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isCreating) {
+        setCreateModalOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [createModalOpen, isCreating]);
+
+  async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = createName.trim();
+    if (!trimmed) {
+      setError("Repository name is required.");
+      return;
+    }
+    setError(null);
+    setIsCreating(true);
+    setCreateResult(null);
+    try {
+      const result =
+        createKind === "rpm"
+          ? await pulpRepositoryManagementService.createRpm(trimmed)
+          : await pulpRepositoryManagementService.createDeb(trimmed);
+      setCreateResult(result);
+      setCreateName("");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Create failed.");
+    } finally {
+      setIsCreating(false);
+    }
+  }
 
   async function handlePublish(repo: PulpRpmRepository) {
     setBusyHref(repo.pulp_href);
@@ -254,7 +333,7 @@ export default function RepositoriesListPage() {
       description="List RPM and Debian repositories, publish, create RPM distributions, inspect content, or remove a repository."
       hasSession={hasSession}
       sessionUser={sessionUser}
-      isLoading={isLoading || isLoadingRepos || isDeleting}
+      isLoading={isLoading || isLoadingRepos || isDeleting || isCreating}
       usersCount={users.length}
       groupsCount={groups.length}
       error={error}
@@ -300,12 +379,9 @@ export default function RepositoriesListPage() {
               >
                 Refresh
               </Button>
-              <Link
-                href="/repositories/create"
-                className="inline-flex items-center rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
-              >
+              <Button type="button" variant="outline" onClick={openCreateModal}>
                 Create repository
-              </Link>
+              </Button>
             </div>
 
             {publishResult ? (
@@ -478,6 +554,109 @@ export default function RepositoriesListPage() {
           </CardContent>
         </Card>
       )}
+
+      {createModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/50 p-4 sm:items-center"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isCreating) {
+              closeCreateModal();
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={createDialogTitleId}
+            className="max-h-[min(90vh,40rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-950"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2
+              id={createDialogTitleId}
+              className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+            >
+              Create repository
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              New RPM or Debian APT repository in Pulp.
+            </p>
+
+            <div className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/60 p-3 text-sm text-zinc-700 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-zinc-300">
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">How to name the repository</p>
+              <p className="mt-2">
+                Use a path-style name: product or stream, distro family, major version, then
+                architecture (matches how you organize RHEL-style trees).
+              </p>
+              <p className="mb-1.5 mt-3 font-medium text-zinc-900 dark:text-zinc-100">Examples</p>
+              <ul className="space-y-1 rounded-md border border-amber-200/60 bg-white/80 px-3 py-2 font-mono text-xs text-zinc-800 dark:border-amber-900/50 dark:bg-zinc-950/40 dark:text-zinc-200 sm:text-sm">
+                <li>adminbolt-devel/rhel/10/noarch</li>
+                <li>adminbolt-devel/rhel/10/x86_64</li>
+              </ul>
+            </div>
+
+            <form className="mt-4 flex flex-col gap-4" onSubmit={(e) => void handleCreateSubmit(e)}>
+              <div className="flex flex-wrap gap-2">
+                {(["rpm", "deb"] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setCreateKind(k)}
+                    disabled={isCreating}
+                    className={cn(
+                      "rounded-md border px-3 py-1.5 text-sm disabled:opacity-50",
+                      createKind === k
+                        ? "border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-black"
+                        : "border-zinc-300 dark:border-zinc-700"
+                    )}
+                  >
+                    {k.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <FormField label="Name">
+                <Input
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  required
+                  disabled={isCreating}
+                />
+              </FormField>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? "Creating…" : "Create"}
+                </Button>
+                <Button type="button" variant="outline" disabled={isCreating} onClick={closeCreateModal}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+
+            {createResult ? (
+              <div className="mt-4 rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+                <p className="font-medium text-zinc-900 dark:text-zinc-50">Created</p>
+                <p className="mt-2">
+                  <span className="font-medium">Name:</span> {createResult.name}
+                </p>
+                <p className="mt-1 break-all">
+                  <span className="font-medium">Href:</span> {createResult.pulp_href ?? "—"}
+                </p>
+                <p className="mt-1 break-all">
+                  <span className="font-medium">Task:</span> {createResult.task ?? "—"}
+                </p>
+                {createResult.pulp_href ? (
+                  <Link
+                    href={`/repositories/content?pulp_href=${encodeURIComponent(createResult.pulp_href)}`}
+                    className="mt-3 inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                  >
+                    View content
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {deleteModalRepo ? (
         <div
