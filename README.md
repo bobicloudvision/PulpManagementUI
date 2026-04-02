@@ -4,38 +4,50 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 
 ## Features
 
-- **Authentication** — Log in against Pulp; protected pages and API routes.
-- **Users** — List and create Pulp users (staff/active flags, profile fields).
-- **Groups** — List and create access groups.
-- **Distributions** — Browse publication endpoints (base path, base URL, linked repository); edit fields and delete. **Create RPM distributions** from the repositories list (binds a new `distributions/rpm/rpm/` instance to an RPM repository with auto-generated name `«repo»-dist` and `base_path` equal to the repository name).
-- **Content** — List RPM package content; open package detail (checksums, NVRA, artifact).
-- **Uploads** — List upload sessions; **chunked upload** for large files; optional **create RPM content** from an artifact; **add content to an RPM repository** by name.
+### Overview & authentication
+
+- **Dashboard** — Summary cards for users, groups, RPM repositories, and Debian repositories. Counts are loaded via a **short-lived server cache** (~60s) with a **Refresh summary** control when you need up-to-date numbers. **Shortcuts** grid links to users, groups, repositories, content, and upload.
+- **Authentication** — Log in against Pulp; **cookie-based session**; protected app pages and API routes; session card with **logout**.
+
+### Identity & access
+
+- **Users** — List and **create** Pulp users (staff/active flags, profile fields).
+- **Groups** — List and **create** access groups.
 
 ### Repositories (RPM & Debian APT)
 
-- **List & switch** — Paginated list with **RPM** / **DEB** toggle; refresh; links to create, edit, content, publish, and delete.
-- **Create** — New RPM or Debian APT repository by name.
-- **Edit** — Load repository from Pulp; **patch** writable fields. **RPM** matches the Pulp `RpmRepository` serializer (name, description, `retain_repo_versions`, `remote`, `autopublish`, `metadata_signing_service`, `retain_package_versions`, metadata/package checksum types, `gpgcheck`, `repo_gpgcheck`, `sqlite_metadata`) plus read-only metadata (created time, latest version href, versions list href). **Debian** supports name, description, retain versions, remote, autopublish, structured repo flag.
-- **Publish** — Trigger RPM or Debian publication; wait on async tasks when needed; **success panel** shows publication href and task when available (with robust parsing of `created_resources` from completed tasks). Failures surface in the session banner **above** the page content.
-- **Repository content** — Same-repo content listing as before (query by `pulp_href`).
-- **RPM version history** — **Versions** lists all `RpmRepositoryVersion` rows from `…/versions/` with **added / removed / present** content summaries per type (e.g. `rpm.package`). Rows link to a **version detail** page.
-- **RPM single version** — **GET** instance (`…/versions/N/`): number, timestamps, hrefs, `base_version`, content summary. **Delete version** (Pulp `DELETE`) with confirmation; redirects back to the version list for the parent repository.
-- **Distribute (RPM only)** — From the list, **Distribute** creates an RPM distribution pointing at that repository (`POST` proxied to Pulp); shows `base_url`, distribution href, optional task, and a shortcut to the distributions list.
+- **List & switch** — Paginated list with **RPM** / **DEB** toggle; refresh; actions for create, edit, content, publish, distribute, and delete.
+- **Create** — New **RPM** or **Debian APT** repository by name.
+- **Edit** — Load repository from Pulp and **PATCH** writable fields. **RPM** aligns with the Pulp `RpmRepository` serializer (name, description, `retain_repo_versions`, `remote`, `autopublish`, `metadata_signing_service`, `retain_package_versions`, metadata/package checksum types, `gpgcheck`, `repo_gpgcheck`, `sqlite_metadata`) plus read-only metadata (created time, latest version href, versions list href). **Debian** supports name, description, retain versions, remote, autopublish, structured repo flag.
+- **Publish** — Trigger **RPM** or **Debian** publication; wait on async tasks when needed; **success panel** with publication href and task when available (including parsing `created_resources` from completed tasks). Errors show in the session banner **above** the main content.
+- **Repository content** — Browse content for a repository (query by `pulp_href`).
+- **RPM version history** — **Versions** lists `RpmRepositoryVersion` rows from `…/versions/` with **added / removed / present** content summaries per type (e.g. `rpm.package`). Rows link to a **version detail** page.
+- **RPM single version** — **GET** a version (`…/versions/N/`): number, timestamps, hrefs, `base_version`, content summary. **Delete version** with confirmation; redirect back to the parent repository’s version list.
+- **Distributions (RPM)** — From the list, **Distribute** creates an RPM distribution for that repository (`POST` to Pulp) with auto-generated name `«repo»-dist` and `base_path` matching the repo name. The table surfaces **distribution URLs** where applicable. **Delete repository** can optionally remove linked **RPM** distributions (APT distributions are not removed from this flow).
+
+### Content & uploads
+
+- **Content** — List **RPM package** content with pagination; open **package detail** (checksums, NVRA, artifact). **`/content/preview`** accepts `id` or `href` query params and redirects to the package page or list.
+- **Uploads** — List upload sessions; **chunked upload** for large files; optional **create RPM content** from an artifact; **add content to an RPM repository** by name.
 
 ### UI
 
-- **Sidebar** — Compact left rail with grouped navigation (Identity, Access, Delivery, Repository), larger touch-friendly nav tiles with light motion (hover/active states, reduced-motion respected), and a small users/groups footer line.
-- **Administration layout** — Session card and titles unchanged; **errors** render immediately under the header so failures (e.g. publish or API errors) are visible without scrolling past the main card.
+- **Sidebar** — Grouped navigation (**Overview**, **Identity**, **Access**, **Repository**): Dashboard, Users, Groups, Repositories, Content, Upload file. Nav tiles with hover/active states and **reduced-motion** support; footer shows **live user and group counts**.
+- **Administration layout** — Consistent shell with titles and session; **errors** render under the header so API or publish failures stay visible without scrolling past the main card.
 
 ## Screenshots
 
 Assets live in [`screenshots/`](screenshots/).
 
+### Dashboard
+
+![Dashboard with summary counts, cache notice, shortcuts, and session](screenshots/screenshot4.png)
+
 ### RPM repositories list
 
 ![Repositories list with RPM/DEB toggle, actions, and session](screenshots/screenshot1.png)
 
-### Distributions
+### Distributions (in repositories view)
 
 ![Published distributions, base path and base URL](screenshots/screenshot2.png)
 
