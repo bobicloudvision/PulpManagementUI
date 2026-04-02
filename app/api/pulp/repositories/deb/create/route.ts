@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { getPulpApiUrl, PULP_AUTH_COOKIE, toBasicAuthHeader } from "@/lib/pulp";
 import { requirePulpAuth } from "@/app/api/pulp/_helpers";
-import { authHeaders, readDetail, TaskRefResponse, waitForTask } from "../../_server";
+import { authHeaders, hrefFromCreatedResource, readDetail, TaskRefResponse, waitForTask } from "../../_server";
 
 type CreateBody = {
   name?: string;
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   try {
     if (created.task) {
       const task = await waitForTask(created.task, authHeader);
-      pulpHref = task.created_resources?.[0] ?? pulpHref;
+      pulpHref = hrefFromCreatedResource(task.created_resources?.[0]) ?? pulpHref;
     }
   } catch (error) {
     return Response.json(

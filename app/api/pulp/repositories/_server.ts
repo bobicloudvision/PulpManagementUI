@@ -10,7 +10,7 @@ export type TaskResponse = {
   href?: string;
 };
 
-function hrefFromCreatedResource(entry: CreatedResourceEntry | undefined): string | null {
+export function hrefFromCreatedResource(entry: CreatedResourceEntry | undefined): string | null {
   if (entry == null) return null;
   if (typeof entry === "string") return entry;
   const h = entry.pulp_href ?? entry.href;

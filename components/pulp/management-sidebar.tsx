@@ -11,6 +11,7 @@ type ManagementSidebarProps = {
 };
 
 type NavIconName =
+  | "dashboard"
   | "users"
   | "groups"
   | "content"
@@ -25,6 +26,17 @@ type NavItem = {
 };
 
 const navSections = [
+  {
+    title: "Overview",
+    items: [
+      {
+        href: "/dashboard",
+        label: "Dashboard",
+        hint: "Overview and quick links",
+        icon: "dashboard",
+      },
+    ] satisfies NavItem[],
+  },
   {
     title: "Identity",
     items: [{ href: "/users/list", label: "Users", hint: "Browse and manage users", icon: "users" }] satisfies NavItem[],
@@ -47,6 +59,15 @@ function SidebarIcon({ name }: { name: NavIconName }) {
   const iconClassName = "h-5 w-5 shrink-0";
 
   switch (name) {
+    case "dashboard":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" className={iconClassName}>
+          <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.5" />
+          <rect x="13" y="3.5" width="7.5" height="7.5" rx="1.5" />
+          <rect x="3.5" y="13" width="7.5" height="7.5" rx="1.5" />
+          <rect x="13" y="13" width="7.5" height="7.5" rx="1.5" />
+        </svg>
+      );
     case "users":
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" className={iconClassName}>
@@ -102,7 +123,7 @@ export function ManagementSidebar({ usersCount, groupsCount }: ManagementSidebar
     <aside className="w-full border-b border-zinc-200/80 bg-zinc-50/80 md:h-screen md:w-[16.75rem] md:shrink-0 md:border-r md:border-b-0 dark:border-zinc-800/80 dark:bg-zinc-950/80">
       <div className="flex h-full flex-col gap-2 px-3 py-4 md:sticky md:top-0 md:overflow-y-auto md:px-4 md:py-5">
         <Link
-          href="/users/list"
+          href="/dashboard"
           className="group/brand mb-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-2 text-zinc-900 outline-none ring-zinc-400 transition-[transform,box-shadow] duration-300 ease-out hover:bg-zinc-100/90 focus-visible:ring-2 motion-reduce:transition-none dark:text-zinc-100 dark:hover:bg-zinc-900/60"
         >
           <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-zinc-200/90 bg-white shadow-sm transition-[transform,box-shadow,border-color] duration-300 ease-out group-hover/brand:scale-[1.03] group-hover/brand:border-zinc-300 group-hover/brand:shadow-md motion-reduce:group-hover/brand:scale-100 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover/brand:border-zinc-600">
