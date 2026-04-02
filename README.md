@@ -11,6 +11,28 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 - **Content** — List RPM package content; open package detail (checksums, NVRA, artifact).
 - **Uploads** — List upload sessions; **chunked upload** for large files; optional **create RPM content** from an artifact; **add content to an RPM repository** by name.
 
+## Screenshots
+
+### RPM package detail
+
+![RPM package instance with checksums and dependencies](screenshots/screenshot1.png)
+
+### Distributions
+
+![Published distributions, base path and base URL](screenshots/screenshot2.png)
+
+### Content list
+
+![RPM content list with pagination](screenshots/screenshot3.png)
+
+### Upload sessions
+
+![Chunked uploads list](screenshots/screenshot4.png)
+
+### Upload file
+
+![Chunked upload form](screenshots/screenshot5.png)
+
 ## Getting started
 
 1. Copy environment:
@@ -40,7 +62,5 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 | `npm run lint`  | ESLint             |
 
 ## Discoverability
-
-**Suggested GitHub repository topics:** `pulp` `pulp3` `pulp-project` `repository-management` `rpm` `rpm-packages` `content-management` `artifact-upload` `chunked-upload` `nextjs` `next-js` `react` `typescript` `tailwindcss` `app-router` `api-proxy` `admin-ui` `devops` `linux-packages` `software-repository`
 
 **Keywords:** pulp, pulp 3, pulp3, repository manager, RPM repository, YUM/DNF content, artifact upload, chunked file upload, distribution, publication, user management, group management, Next.js admin, React dashboard, TypeScript UI, Tailwind, Pulp REST API v3, content gateway, package hosting.
