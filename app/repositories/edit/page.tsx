@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/pulp/admin-shell";
 import { usePulpAuthContext } from "@/components/pulp/auth-context";
@@ -12,10 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import {
-  pulpRepositoryManagementService,
-  type RepositoryUpdateResult,
-} from "@/services/pulp/repository-management-service";
+import { pulpDistributionService } from "@/services/pulp/distribution-service";
+import { pulpRepositoryManagementService } from "@/services/pulp/repository-management-service";
 import type {
   DebRepositoryUpdatePayload,
   PulpDebRepositoryDetail,
@@ -68,6 +66,57 @@ type RpmReadOnlyMeta = {
   latest_version_href: string | null;
 };
 
+type ActivityPhase = "running" | "done" | "failed";
+
+type ActivityLine = {
+  id: string;
+  label: string;
+  phase: ActivityPhase;
+  detail?: string;
+};
+
+function ActivityLog({ lines }: { lines: ActivityLine[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [lines]);
+
+  return (
+    <div ref={scrollRef} className="max-h-64 overflow-y-auto rounded-md border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-950/40">
+      <ul className="space-y-2.5 font-mono text-xs leading-relaxed">
+      {lines.map((line) => (
+        <li
+          key={line.id}
+          className="border-l-2 border-zinc-200 pl-3 dark:border-zinc-700"
+        >
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span
+              className={
+                line.phase === "running"
+                  ? "text-amber-600 dark:text-amber-400"
+                  : line.phase === "done"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-600 dark:text-red-400"
+              }
+              aria-hidden
+            >
+              {line.phase === "running" ? "…" : line.phase === "done" ? "ok" : "!"}
+            </span>
+            <span className="text-zinc-800 dark:text-zinc-200">{line.label}</span>
+          </div>
+          {line.detail ? (
+            <p className="mt-1 break-all text-[11px] text-zinc-500 dark:text-zinc-400">{line.detail}</p>
+          ) : null}
+        </li>
+      ))}
+      </ul>
+    </div>
+  );
+}
+
 function ChecksumSelect({
   label,
   value,
@@ -112,7 +161,9 @@ function RepositoriesEditInner() {
   const [deb, setDeb] = useState<DebRepositoryUpdatePayload | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [updated, setUpdated] = useState<RepositoryUpdateResult | null>(null);
+  const [saveAlsoPublish, setSaveAlsoPublish] = useState(false);
+  const [saveAlsoDistribute, setSaveAlsoDistribute] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityLine[]>([]);
 
   useEffect(() => {
     if (!hasSession || !pulpHref) {
@@ -120,15 +171,23 @@ function RepositoriesEditInner() {
       setRpm(null);
       setRpmMeta(null);
       setDeb(null);
+      setSaveAlsoPublish(false);
+      setSaveAlsoDistribute(false);
+      setActivityLog([]);
       return;
     }
 
     let active = true;
 
     async function load() {
+      const loadLineId = crypto.randomUUID();
       setIsLoadingDetail(true);
       setError(null);
-      setUpdated(null);
+      setSaveAlsoPublish(false);
+      setSaveAlsoDistribute(false);
+      setActivityLog([
+        { id: loadLineId, label: "Open edit page — loading repository from Pulp", phase: "running" },
+      ]);
       try {
         const detail = await pulpRepositoryManagementService.getRepositoryDetail(pulpHref);
         if (!active) return;
@@ -147,13 +206,30 @@ function RepositoriesEditInner() {
           setRpm(null);
           setRpmMeta(null);
         }
+        setActivityLog((prev) =>
+          prev.map((line) =>
+            line.id === loadLineId
+              ? {
+                  ...line,
+                  phase: "done" as const,
+                  detail: `${detail.kind.toUpperCase()} · ${detail.name}`,
+                }
+              : line
+          )
+        );
       } catch (e) {
         if (!active) return;
         setLoadedKind(null);
         setRpm(null);
         setRpmMeta(null);
         setDeb(null);
-        setError(e instanceof Error ? e.message : "Failed to load repository.");
+        const message = e instanceof Error ? e.message : "Failed to load repository.";
+        setError(message);
+        setActivityLog((prev) =>
+          prev.map((line) =>
+            line.id === loadLineId ? { ...line, phase: "failed" as const, detail: message } : line
+          )
+        );
       } finally {
         if (active) setIsLoadingDetail(false);
       }
@@ -181,7 +257,13 @@ function RepositoriesEditInner() {
 
     setError(null);
     setIsSubmitting(true);
-    setUpdated(null);
+
+    const saveLineId = crypto.randomUUID();
+    setActivityLog((prev) => [
+      ...prev,
+      { id: saveLineId, label: "Save — write repository settings to Pulp", phase: "running" },
+    ]);
+
     try {
       const result =
         loadedKind === "rpm" && rpm
@@ -191,17 +273,117 @@ function RepositoriesEditInner() {
             : null;
       if (!result) {
         setError("Nothing to save.");
+        setActivityLog((prev) =>
+          prev.map((line) =>
+            line.id === saveLineId
+              ? { ...line, phase: "failed" as const, detail: "Nothing to save." }
+              : line
+          )
+        );
         return;
       }
-      setUpdated(result);
+      setActivityLog((prev) =>
+        prev.map((line) =>
+          line.id === saveLineId
+            ? {
+                ...line,
+                phase: "done" as const,
+                detail: `Repository updated · name: ${result.name}`,
+              }
+            : line
+        )
+      );
       if (loadedKind === "rpm" && rpm) {
         setRpm({ ...rpm, name: result.name });
       }
       if (loadedKind === "deb" && deb) {
         setDeb({ ...deb, name: result.name });
       }
+
+      let publishFailed = false;
+      if (saveAlsoPublish) {
+        const publishLineId = crypto.randomUUID();
+        setActivityLog((prev) => [
+          ...prev,
+          { id: publishLineId, label: "Publish — create publication from repository", phase: "running" },
+        ]);
+        try {
+          const published =
+            loadedKind === "rpm"
+              ? await pulpRepositoryManagementService.publishRpm(pulpHref)
+              : await pulpRepositoryManagementService.publishDeb(pulpHref);
+          const pubDetail = [
+            published.publication ? `publication: ${published.publication}` : null,
+            published.task ? `task: ${published.task}` : null,
+          ]
+            .filter(Boolean)
+            .join("\n");
+          setActivityLog((prev) =>
+            prev.map((line) =>
+              line.id === publishLineId
+                ? {
+                    ...line,
+                    phase: "done" as const,
+                    detail: pubDetail || "Completed (no publication href returned).",
+                  }
+                : line
+            )
+          );
+        } catch (e) {
+          publishFailed = true;
+          const msg = e instanceof Error ? e.message : "Publish failed.";
+          setError(msg);
+          setActivityLog((prev) =>
+            prev.map((line) =>
+              line.id === publishLineId ? { ...line, phase: "failed" as const, detail: msg } : line
+            )
+          );
+        }
+      }
+
+      if (saveAlsoDistribute && loadedKind === "rpm" && !(saveAlsoPublish && publishFailed)) {
+        const distLineId = crypto.randomUUID();
+        setActivityLog((prev) => [
+          ...prev,
+          { id: distLineId, label: "Distribute — create RPM distribution", phase: "running" },
+        ]);
+        try {
+          const distributed = await pulpDistributionService.createRpmDistributionForRepository(
+            pulpHref,
+            result.name
+          );
+          const distDetail = [
+            `name: ${distributed.name}`,
+            `base_path: ${distributed.base_path}`,
+            distributed.base_url ? `base_url: ${distributed.base_url}` : null,
+            distributed.pulp_href ? `href: ${distributed.pulp_href}` : null,
+            distributed.task ? `task: ${distributed.task}` : null,
+          ]
+            .filter(Boolean)
+            .join("\n");
+          setActivityLog((prev) =>
+            prev.map((line) =>
+              line.id === distLineId ? { ...line, phase: "done" as const, detail: distDetail } : line
+            )
+          );
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Failed to create distribution.";
+          setError(msg);
+          setActivityLog((prev) =>
+            prev.map((line) =>
+              line.id === distLineId ? { ...line, phase: "failed" as const, detail: msg } : line
+            )
+          );
+        }
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed.");
+      const msg = e instanceof Error ? e.message : "Update failed.";
+      setError(msg);
+      setActivityLog((prev) =>
+        prev.map((line) =>
+          line.id === saveLineId ? { ...line, phase: "failed" as const, detail: msg } : line
+        )
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -431,6 +613,27 @@ function RepositoriesEditInner() {
                     />
                     SQLite metadata
                   </label>
+                  <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      After save
+                    </p>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={saveAlsoPublish}
+                        onChange={(e) => setSaveAlsoPublish(e.target.checked)}
+                      />
+                      Publish repository
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={saveAlsoDistribute}
+                        onChange={(e) => setSaveAlsoDistribute(e.target.checked)}
+                      />
+                      Create RPM distribution
+                    </label>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Saving…" : "Save"}
@@ -519,6 +722,22 @@ function RepositoriesEditInner() {
                     />
                     Structured repo
                   </label>
+                  <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      After save
+                    </p>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={saveAlsoPublish}
+                        onChange={(e) => setSaveAlsoPublish(e.target.checked)}
+                      />
+                      Publish repository
+                    </label>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      RPM-only: create a distribution from the repository list or edit page for RPM repos.
+                    </p>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Saving…" : "Save"}
@@ -541,16 +760,16 @@ function RepositoriesEditInner() {
             </CardContent>
           </Card>
 
-          {updated ? (
-            <Card className="border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-              <CardTitle>Saved</CardTitle>
-              <CardContent className="text-sm">
-                <p>
-                  <span className="font-medium">Name:</span> {updated.name}
-                </p>
-              </CardContent>
-            </Card>
-          ) : null}
+          <Card>
+            <CardTitle>Activity log</CardTitle>
+            <CardContent>
+              {activityLog.length > 0 ? (
+                <ActivityLog lines={activityLog} />
+              ) : (
+                <p className="text-sm text-zinc-500">Open a repository from the list to see load progress here.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </AdminShell>
