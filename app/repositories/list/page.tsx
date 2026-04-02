@@ -590,8 +590,8 @@ export default function RepositoriesListPage() {
               </p>
               <p className="mb-1.5 mt-3 font-medium text-zinc-900 dark:text-zinc-100">Examples</p>
               <ul className="space-y-1 rounded-md border border-amber-200/60 bg-white/80 px-3 py-2 font-mono text-xs text-zinc-800 dark:border-amber-900/50 dark:bg-zinc-950/40 dark:text-zinc-200 sm:text-sm">
-                <li>adminbolt-devel/rhel/10/noarch</li>
-                <li>adminbolt-devel/rhel/10/x86_64</li>
+                <li>yourpulp-devel/rhel/10/noarch</li>
+                <li>yourpulp-devel/rhel/10/x86_64</li>
               </ul>
             </div>
 
