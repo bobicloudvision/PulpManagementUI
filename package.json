@@ -1,6 +1,6 @@
 {
-  "name": "pulpmanagement-ui",
-  "version": "0.1.0",
+  "name": "pulp-admin-ui",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
