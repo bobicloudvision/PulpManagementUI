@@ -1,5 +1,11 @@
 import { readApiDetail } from "./http";
-import { PulpPaginatedResponse, PulpRpmRepository } from "./types";
+import {
+  DebRepositoryUpdatePayload,
+  PulpPaginatedResponse,
+  PulpRepositoryDetail,
+  PulpRpmRepository,
+  RpmRepositoryUpdatePayload,
+} from "./types";
 
 export type RepositoryPublishResult = {
   publication: string | null;
@@ -16,6 +22,11 @@ export type RepositoryCreateResult = {
 export type RepositoryContentListResult = {
   count: number;
   results: Record<string, unknown>[];
+};
+
+export type RepositoryUpdateResult = {
+  ok: true;
+  name: string;
 };
 
 export const pulpRepositoryManagementService = {
@@ -49,6 +60,34 @@ export const pulpRepositoryManagementService = {
     });
     if (!response.ok) throw new Error(await readApiDetail(response));
     return (await response.json()) as RepositoryCreateResult;
+  },
+
+  async getRepositoryDetail(pulpHref: string): Promise<PulpRepositoryDetail> {
+    const response = await fetch(
+      `/api/pulp/repositories/detail?pulp_href=${encodeURIComponent(pulpHref)}`
+    );
+    if (!response.ok) throw new Error(await readApiDetail(response));
+    return (await response.json()) as PulpRepositoryDetail;
+  },
+
+  async updateRpm(pulpHref: string, payload: RpmRepositoryUpdatePayload): Promise<RepositoryUpdateResult> {
+    const response = await fetch("/api/pulp/repositories/rpm", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pulp_href: pulpHref, ...payload }),
+    });
+    if (!response.ok) throw new Error(await readApiDetail(response));
+    return (await response.json()) as RepositoryUpdateResult;
+  },
+
+  async updateDeb(pulpHref: string, payload: DebRepositoryUpdatePayload): Promise<RepositoryUpdateResult> {
+    const response = await fetch("/api/pulp/repositories/deb", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pulp_href: pulpHref, ...payload }),
+    });
+    if (!response.ok) throw new Error(await readApiDetail(response));
+    return (await response.json()) as RepositoryUpdateResult;
   },
 
   async deleteRpm(pulpHref: string): Promise<void> {

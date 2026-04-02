@@ -25,6 +25,46 @@ type DeleteBody = {
   pulp_href?: string;
 };
 
+type DebPatchBody = {
+  pulp_href?: string;
+  name?: string;
+  description?: string | null;
+  retain_repo_versions?: number | null;
+  remote?: string | null;
+  autopublish?: boolean;
+  structured_repo?: boolean;
+};
+
+function nullIfBlankRemote(v: string | null | undefined): string | null {
+  if (v === null || v === undefined) return null;
+  const t = String(v).trim();
+  return t.length ? t : null;
+}
+
+function toRetainRepoVersions(v: number | null | undefined): number | null {
+  if (v === undefined || v === null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
+function buildDebPatchPayload(body: DebPatchBody, name: string): Record<string, unknown> {
+  return {
+    name: name.trim(),
+    description:
+      body.description === undefined || body.description === null || body.description === ""
+        ? null
+        : String(body.description),
+    retain_repo_versions: toRetainRepoVersions(body.retain_repo_versions),
+    remote: nullIfBlankRemote(body.remote ?? null),
+    autopublish: Boolean(body.autopublish),
+    structured_repo: Boolean(body.structured_repo),
+  };
+}
+
+function isDebRepositoryApiPath(path: string): boolean {
+  return path.includes("/repositories/deb/apt/");
+}
+
 export async function GET(request: Request) {
   const authResult = await requirePulpAuth();
   if (!authResult.ok) {
@@ -50,6 +90,81 @@ export async function GET(request: Request) {
   }
 
   return Response.json(result.data);
+}
+
+export async function PATCH(request: Request) {
+  const authResult = await requirePulpAuth();
+  if (!authResult.ok) {
+    return authResult.response;
+  }
+
+  const body = (await request.json()) as DebPatchBody;
+  const pulpHref = body.pulp_href?.trim();
+  const name = body.name?.trim();
+  if (!pulpHref) {
+    return Response.json({ detail: "pulp_href is required." }, { status: 400 });
+  }
+  if (!name) {
+    return Response.json({ detail: "Repository name is required." }, { status: 400 });
+  }
+
+  const apiPath = normalizePulpHrefToApiPath(pulpHref);
+  if (!isDebRepositoryApiPath(apiPath)) {
+    return Response.json({ detail: "Not a Debian APT repository href." }, { status: 400 });
+  }
+
+  const authHeader = toBasicAuthHeader(authResult.auth);
+  const headers = authHeaders(authHeader);
+  headers.set("Content-Type", "application/json");
+
+  const patchPayload = buildDebPatchPayload(body, name);
+
+  const patchResponse = await fetch(getPulpApiUrl(apiPath), {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(patchPayload),
+    cache: "no-store",
+  });
+
+  if (patchResponse.status === 202) {
+    const ct = patchResponse.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      try {
+        const raw = await patchResponse.text();
+        if (raw) {
+          const payload = JSON.parse(raw) as TaskRefResponse;
+          if (payload.task) {
+            try {
+              await waitForTask(payload.task, authHeader);
+            } catch (error) {
+              return Response.json(
+                { detail: error instanceof Error ? error.message : "Repository update task failed." },
+                { status: 500 }
+              );
+            }
+          }
+        }
+      } catch {
+        // Empty or non-JSON 202 body — treat as accepted.
+      }
+    }
+    return Response.json({ ok: true, name });
+  }
+
+  if (patchResponse.ok) {
+    const ct = patchResponse.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      const updated = (await patchResponse.json()) as { name?: string };
+      return Response.json({ ok: true, name: typeof updated.name === "string" ? updated.name : name });
+    }
+    return Response.json({ ok: true, name });
+  }
+
+  if (patchResponse.status === 401 || patchResponse.status === 403) {
+    const cookieStore = await cookies();
+    cookieStore.delete(PULP_AUTH_COOKIE);
+  }
+  return Response.json({ detail: await readDetail(patchResponse) }, { status: patchResponse.status });
 }
 
 export async function DELETE(request: Request) {

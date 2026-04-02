@@ -70,6 +70,64 @@ export type PulpRpmRepository = {
   pulp_href: string;
 };
 
+/** Fields from GET /repositories/rpm/rpm/{id}/ used by the edit UI. */
+export type PulpRpmRepositoryDetail = {
+  kind: "rpm";
+  pulp_href: string;
+  name: string;
+  pulp_created: string | null;
+  versions_href: string | null;
+  latest_version_href: string | null;
+  description: string | null;
+  retain_repo_versions: number | null;
+  remote: string | null;
+  autopublish: boolean;
+  metadata_signing_service: string | null;
+  retain_package_versions: number;
+  metadata_checksum_type: string | null;
+  package_checksum_type: string | null;
+  gpgcheck: number;
+  repo_gpgcheck: number;
+  sqlite_metadata: boolean;
+};
+
+export type PulpDebRepositoryDetail = {
+  kind: "deb";
+  pulp_href: string;
+  name: string;
+  description: string | null;
+  retain_repo_versions: number | null;
+  remote: string | null;
+  autopublish: boolean;
+  structured_repo: boolean;
+};
+
+export type PulpRepositoryDetail = PulpRpmRepositoryDetail | PulpDebRepositoryDetail;
+
+export type RpmRepositoryUpdatePayload = {
+  name: string;
+  description: string | null;
+  retain_repo_versions: number | null;
+  remote: string | null;
+  autopublish: boolean;
+  metadata_signing_service: string | null;
+  retain_package_versions: number;
+  metadata_checksum_type: string | null;
+  package_checksum_type: string | null;
+  gpgcheck: number;
+  repo_gpgcheck: number;
+  sqlite_metadata: boolean;
+};
+
+export type DebRepositoryUpdatePayload = {
+  name: string;
+  description: string | null;
+  retain_repo_versions: number | null;
+  remote: string | null;
+  autopublish: boolean;
+  structured_repo: boolean;
+};
+
 export type PulpRpmPackage = {
   pulp_href: string;
   pulp_created: string;
