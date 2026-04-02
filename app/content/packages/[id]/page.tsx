@@ -18,8 +18,10 @@ import {
   TableRow,
   TableWrapper,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { pulpContentService } from "@/services/pulp/content-service";
-import { PulpRpmPackage } from "@/services/pulp/types";
+import { pulpUploadService } from "@/services/pulp/upload-service";
+import { PulpRpmPackage, PulpUploadAsRpmResult } from "@/services/pulp/types";
 
 function valueOf(value: unknown): string {
   if (value === null || value === undefined) return "-";
@@ -52,6 +54,8 @@ export default function PackageDetailsPage() {
   const { users } = usePulpUsers(hasSession);
   const { groups } = usePulpGroups(hasSession);
   const [pkg, setPkg] = useState<PulpRpmPackage | null>(null);
+  const [isCreatingRpm, setIsCreatingRpm] = useState(false);
+  const [rpmResult, setRpmResult] = useState<PulpUploadAsRpmResult | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -81,13 +85,34 @@ export default function PackageDetailsPage() {
     };
   }, [hasSession, packageId, setError]);
 
+  const artifactForApi = pkg ? normalizeUrl(pkg.artifact) ?? (typeof pkg.artifact === "string" ? pkg.artifact : null) : null;
+
+  async function handleUploadAsRpm() {
+    if (!artifactForApi) {
+      setError("No artifact linked to this package.");
+      return;
+    }
+    setError(null);
+    setIsCreatingRpm(true);
+    setRpmResult(null);
+    try {
+      const created = await pulpUploadService.uploadAsRpm(artifactForApi);
+      setRpmResult(created);
+    } catch (createError) {
+      setRpmResult(null);
+      setError(createError instanceof Error ? createError.message : "Failed to create RPM content.");
+    } finally {
+      setIsCreatingRpm(false);
+    }
+  }
+
   return (
     <AdminShell
       title="Package Instance"
       description="View details for an RPM package content instance."
       hasSession={hasSession}
       sessionUser={sessionUser}
-      isLoading={isLoading}
+      isLoading={isLoading || isCreatingRpm}
       usersCount={users.length}
       groupsCount={groups.length}
       error={error}
@@ -126,6 +151,29 @@ export default function PackageDetailsPage() {
                 >
                   {normalizeUrl(pkg.url)}
                 </a>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUploadAsRpm}
+                  disabled={!artifactForApi || isCreatingRpm}
+                >
+                  {isCreatingRpm ? "Uploading as RPM..." : "Upload as RPM"}
+                </Button>
+                {!artifactForApi ? (
+                  <span className="text-xs text-zinc-500">No artifact on this package.</span>
+                ) : null}
+              </div>
+              {rpmResult ? (
+                <div className="space-y-1 rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-700">
+                  <p className="break-all">
+                    <span className="font-medium">RPM Content:</span> {rpmResult.content ?? "-"}
+                  </p>
+                  <p className="break-all">
+                    <span className="font-medium">Task:</span> {rpmResult.task ?? "-"}
+                  </p>
+                </div>
               ) : null}
             </CardContent>
           </Card>
