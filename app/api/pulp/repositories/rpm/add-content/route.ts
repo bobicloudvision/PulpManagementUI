@@ -3,6 +3,7 @@ import { getPulpApiUrl, PULP_AUTH_COOKIE, toBasicAuthHeader } from "@/lib/pulp";
 import { requirePulpAuth } from "@/app/api/pulp/_helpers";
 import {
   authHeaders,
+  hrefFromCreatedResource,
   normalizePulpHrefToApiPath,
   readDetail,
   TaskRefResponse,
@@ -56,7 +57,7 @@ async function findOrCreateRepository(repositoryName: string, authHeader: string
 
   if (created.task) {
     const task = await waitForTask(created.task, authHeader);
-    repoHref = task.created_resources?.[0] ?? repoHref;
+    repoHref = hrefFromCreatedResource(task.created_resources?.[0]) ?? repoHref;
   }
 
   if (!repoHref) {

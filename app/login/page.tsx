@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const nextPath = searchParams.get("next") || "/users/list";
+  const nextPath = searchParams.get("next") || "/dashboard";
 
   useEffect(() => {
     let active = true;

@@ -1,6 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import { PulpAuthProvider } from "@/components/pulp/auth-context";
 
 export default function GroupsLayout({ children }: { children: ReactNode }) {
-  return <PulpAuthProvider>{children}</PulpAuthProvider>;
+  return (
+    <PulpAuthProvider>
+      <Suspense fallback={null}>{children}</Suspense>
+    </PulpAuthProvider>
+  );
 }

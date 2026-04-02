@@ -17,7 +17,7 @@ export function useRequireAuth({ hasSession, isCheckingSession }: UseRequireAuth
       return;
     }
 
-    const next = encodeURIComponent(pathname || "/users/list");
+    const next = encodeURIComponent(pathname || "/dashboard");
     router.replace(`/login?next=${next}`);
   }, [hasSession, isCheckingSession, pathname, router]);
 

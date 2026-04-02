@@ -32,10 +32,17 @@ async function loadPulpDashboardStats(authEncoded: string): Promise<PulpDashboar
     pulpFetch<PulpCountListResponse>("/repositories/deb/apt/?limit=1&offset=0", auth),
   ]);
 
-  for (const res of [usersRes, groupsRes, rpmRes, debRes]) {
-    if (!res.ok) {
-      return { ok: false, detail: res.detail, status: res.status };
-    }
+  if (!usersRes.ok) {
+    return { ok: false, detail: usersRes.detail, status: usersRes.status };
+  }
+  if (!groupsRes.ok) {
+    return { ok: false, detail: groupsRes.detail, status: groupsRes.status };
+  }
+  if (!rpmRes.ok) {
+    return { ok: false, detail: rpmRes.detail, status: rpmRes.status };
+  }
+  if (!debRes.ok) {
+    return { ok: false, detail: debRes.detail, status: debRes.status };
   }
 
   const rpm = rpmRes.data.count;
