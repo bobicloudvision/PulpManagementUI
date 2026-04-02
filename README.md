@@ -1,5 +1,7 @@
 # Pulp Admin UI
 
+![Dashboard with summary counts, cache notice, shortcuts, and session](screenshots/screenshot.png)
+
 Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups, distributions, RPM content, and file uploads against your Pulp API. Built with **Next.js** (App Router), **React 19**, **TypeScript**, and **Tailwind CSS**. Server routes proxy the Pulp REST API with cookie-based sessions.
 
 ## Features
@@ -34,10 +36,6 @@ Web admin console for [Pulp 3](https://pulpproject.org/)—manage users, groups,
 
 - **Sidebar** — Grouped navigation (**Overview**, **Identity**, **Access**, **Repository**): Dashboard, Users, Groups, Repositories, Content, Upload file. Nav tiles with hover/active states and **reduced-motion** support; footer shows **live user and group counts**.
 - **Administration layout** — Consistent shell with titles and session; **errors** render under the header so API or publish failures stay visible without scrolling past the main card.
-
-## Screenshot
-
-![Dashboard with summary counts, cache notice, shortcuts, and session](screenshots/screenshot.png)
 
 ## Getting started
 
