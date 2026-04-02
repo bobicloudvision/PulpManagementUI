@@ -38,24 +38,6 @@ const navSections = [
         hint: "Overview and quick links",
         icon: "dashboard",
       },
-      {
-        href: "/workers/list",
-        label: "Workers",
-        hint: "Task workers and heartbeats",
-        icon: "workers",
-      },
-      {
-        href: "/tasks/list",
-        label: "Tasks",
-        hint: "Async task history and status",
-        icon: "tasks",
-      },
-      {
-        href: "/task-schedules/list",
-        label: "Task schedules",
-        hint: "Periodic dispatch and Celery beat schedules",
-        icon: "schedules",
-      },
     ] satisfies NavItem[],
   },
   {
@@ -74,6 +56,29 @@ const navSections = [
       { href: "/uploads/create", label: "Upload file", hint: "Send file to Pulp", icon: "upload" },
     ] satisfies NavItem[],
   },
+  {
+    title: "Workers & tasks",
+    items: [
+      {
+        href: "/tasks/list",
+        label: "Tasks",
+        hint: "Async task history and status",
+        icon: "tasks",
+      },
+      {
+        href: "/task-schedules/list",
+        label: "Task schedules",
+        hint: "Periodic dispatch and Celery beat schedules",
+        icon: "schedules",
+      },
+      {
+        href: "/workers/list",
+        label: "Workers",
+        hint: "Task workers and heartbeats",
+        icon: "workers",
+      },
+    ] satisfies NavItem[],
+  }
 ];
 
 function SidebarIcon({ name }: { name: NavIconName }) {
