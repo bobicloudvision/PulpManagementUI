@@ -38,7 +38,8 @@ export const pulpDistributionService = {
   },
 
   /**
-   * Creates an RPM distribution pointing at the repository (auto name/base_path from repo name).
+   * Ensures an RPM distribution for the repository: updates name/base_path if one is already
+   * linked, otherwise creates it (`«name»-dist` / base_path = repo name).
    */
   async createRpmDistributionForRepository(
     repositoryPulpHref: string,

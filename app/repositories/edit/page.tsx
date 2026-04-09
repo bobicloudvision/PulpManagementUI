@@ -345,7 +345,7 @@ function RepositoriesEditInner() {
         const distLineId = crypto.randomUUID();
         setActivityLog((prev) => [
           ...prev,
-          { id: distLineId, label: "Distribute — create RPM distribution", phase: "running" },
+          { id: distLineId, label: "Distribute — create or update RPM distribution", phase: "running" },
         ]);
         try {
           const distributed = await pulpDistributionService.createRpmDistributionForRepository(
@@ -631,7 +631,7 @@ function RepositoriesEditInner() {
                         checked={saveAlsoDistribute}
                         onChange={(e) => setSaveAlsoDistribute(e.target.checked)}
                       />
-                      Create RPM distribution
+                      Create or update RPM distribution
                     </label>
                   </div>
                   <div className="flex flex-wrap gap-2">
