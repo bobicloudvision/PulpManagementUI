@@ -54,11 +54,42 @@ export type PulpPaginatedJson<T> = {
   results: T[];
 };
 
+function formatPulpErrorPayload(payload: unknown): string | null {
+  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+  const o = payload as Record<string, unknown>;
+  if (typeof o.detail === "string" && o.detail.length > 0) {
+    return o.detail;
+  }
+  if (Array.isArray(o.detail) && o.detail.length > 0) {
+    return o.detail.map(String).join("; ");
+  }
+  const parts: string[] = [];
+  for (const [key, val] of Object.entries(o)) {
+    if (key === "detail") continue;
+    if (Array.isArray(val)) {
+      const msgs = val.map((x) => (typeof x === "string" ? x : JSON.stringify(x)));
+      if (msgs.length > 0) parts.push(`${key}: ${msgs.join(", ")}`);
+    } else if (typeof val === "string") {
+      parts.push(`${key}: ${val}`);
+    } else if (val != null && typeof val === "object") {
+      parts.push(`${key}: ${JSON.stringify(val)}`);
+    }
+  }
+  return parts.length > 0 ? parts.join("; ") : null;
+}
+
 export async function readDetail(response: Response): Promise<string> {
   try {
-    const payload = (await response.json()) as { detail?: string };
-    if (typeof payload.detail === "string" && payload.detail.length > 0) {
-      return payload.detail;
+    const text = await response.text();
+    if (text.trim().length === 0) {
+      return response.statusText || `Pulp request failed with status ${response.status}.`;
+    }
+    const payload = JSON.parse(text) as unknown;
+    const formatted = formatPulpErrorPayload(payload);
+    if (formatted) {
+      return formatted;
     }
   } catch {
     // Ignore parsing failure.

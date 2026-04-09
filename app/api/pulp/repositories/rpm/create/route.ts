@@ -52,7 +52,10 @@ export async function POST(request: Request) {
 
   const description = typeof raw.description === "string" ? raw.description : "";
   const autopublish = Boolean(raw.autopublish);
-  const sqlite_metadata = Boolean(raw.sqlite_metadata);
+
+  const parsedRetainPkg = parseNullableInt(raw.retain_package_versions);
+  const retainPackageVersions =
+    parsedRetainPkg === null ? 0 : parsedRetainPkg >= 0 ? parsedRetainPkg : 0;
 
   const payload: RpmRepositoryCreatePayload = {
     pulp_labels: labels,
@@ -62,12 +65,25 @@ export async function POST(request: Request) {
     remote: trimOrNull(raw.remote),
     autopublish,
     metadata_signing_service: trimOrNull(raw.metadata_signing_service),
-    retain_package_versions: parseNullableInt(raw.retain_package_versions),
+    retain_package_versions: retainPackageVersions,
     metadata_checksum_type: trimOrNull(raw.metadata_checksum_type),
     package_checksum_type: trimOrNull(raw.package_checksum_type),
     gpgcheck: parseNullableInt(raw.gpgcheck),
     repo_gpgcheck: parseNullableInt(raw.repo_gpgcheck),
-    sqlite_metadata,
+    sqlite_metadata: Boolean(raw.sqlite_metadata),
+  };
+
+  // Pulp rpm: retain_package_versions is a non-null integer (0 = keep all versions).
+  // Deprecated/read-only RPM fields must not be sent on create (pulp_rpm 3.30+).
+  const pulpBody: Record<string, unknown> = {
+    pulp_labels: labels,
+    name,
+    description,
+    retain_repo_versions: payload.retain_repo_versions,
+    remote: payload.remote,
+    autopublish: payload.autopublish,
+    metadata_signing_service: payload.metadata_signing_service,
+    retain_package_versions: retainPackageVersions,
   };
 
   const authHeader = toBasicAuthHeader(authResult.auth);
@@ -77,7 +93,7 @@ export async function POST(request: Request) {
   const createResponse = await fetch(getPulpApiUrl("/repositories/rpm/rpm/"), {
     method: "POST",
     headers,
-    body: JSON.stringify(payload),
+    body: JSON.stringify(pulpBody),
     cache: "no-store",
   });
 
